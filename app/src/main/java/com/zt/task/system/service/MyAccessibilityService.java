@@ -66,14 +66,14 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                     if (nodeInfo != null) {
                         performViewClick(nodeInfo);
                         APP app = APP.getInstance();
-                        if (null !=app){
-                            if("刷词".equalsIgnoreCase(APP.getInstance().getTaskType().trim())){
+                        if (null != app && null != app.getTaskType()) {
+                            if ("刷词".equalsIgnoreCase(APP.getInstance().getTaskType().trim())) {
                                 mHandler.sendEmptyMessage(1);
                             } else {
-                                ToastUtil.showShort(this,"刷词以外其它类型任务开发中..");
+                                ToastUtil.showShort(this, "刷词以外其它类型任务开发中..");
                             }
                         } else {
-                            ToastUtil.showShort(this,"获取任务类型失败");
+                            ToastUtil.showShort(this, "获取任务类型失败");
                         }
                     }
                     Log.v(TAG, "typeWindowStateChanged");
@@ -94,7 +94,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         Log.e(TAG, "onServiceConnected");
 
         LauncherUtils.clearPackage("com.baidu.appsearch");
-        LauncherUtils.launchAPK1(this, "com.baidu.appsearch");
+        LauncherUtils.launchAPK3(this, "com.baidu.appsearch");
 
     }
 
