@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="tab_segmented_checked">#30A3EE</color>
+    <color name="tab_segmented_unchecked">#F8FAFE</color>
+    
+    
+    <color name="btn_default_normal">#30A3EE</color>
+    <color name="btn_default_pressed">#F8FAFE</color>
+
+</resources>
