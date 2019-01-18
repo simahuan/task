@@ -65,10 +65,15 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                     AccessibilityNodeInfo nodeInfo = findViewByText("分类", true);
                     if (nodeInfo != null) {
                         performViewClick(nodeInfo);
-                        if("刷词".equalsIgnoreCase(APP.getInstance().getTaskType().trim())){
-                            mHandler.sendEmptyMessage(1);
+                        APP app = APP.getInstance();
+                        if (null !=app){
+                            if("刷词".equalsIgnoreCase(APP.getInstance().getTaskType().trim())){
+                                mHandler.sendEmptyMessage(1);
+                            } else {
+                                ToastUtil.showShort(this,"刷词以外其它类型任务开发中..");
+                            }
                         } else {
-                            ToastUtil.showShort(this,"刷词以外其它类型任务开发中..");
+                            ToastUtil.showShort(this,"获取任务类型失败");
                         }
                     }
                     Log.v(TAG, "typeWindowStateChanged");
