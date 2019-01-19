@@ -50,6 +50,7 @@ public class ztApplication extends Application {
 //        CrashReport.initCrashReport(getApplicationContext(), "cd4ba6552d", false);
         mActivityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         BaseAccessibilityService.getInstance().init(this);
+        Preferences.set(ztApplication.getAppContext(),Constant.KEY_ACCESSIBILITY_SERVICE_TAG,false);
 //        Preferences.set(getBaseContext(), Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
         LogUtils.e("Application initTask");
     }

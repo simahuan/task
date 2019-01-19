@@ -27,9 +27,14 @@ public class MyAccessibilityService extends BaseAccessibilityService {
 
     public static int taskCount = ztApplication.getInstance().getAmount();
 
-    Handler mHandler = new Handler(new Handler.Callback() {
+
+    private Handler mHandler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message pMessage) {
+            if (Preferences.getBoolean(MyAccessibilityService.this, Constant.KEY_TASK_ERROR)) {
+                performHomeClick();
+                return false;
+            }
             switch (pMessage.what) {
                 case 1:
                     stepOneFindSearchBoxClick();
@@ -49,7 +54,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                 default:
                     break;
             }
-            return false;
+            return true;
         }
     });
 
@@ -81,9 +86,12 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                             if ("刷词".equalsIgnoreCase(type)) {
                                 mHandler.sendEmptyMessage(1);
                             } else {
+                                performHomeClick();
+                                LogUtils.e("刷词以外其它类型任务开发中..");
                                 ToastUtil.showShort(this, "刷词以外其它类型任务开发中..");
                             }
                         } else {
+                            LogUtils.e("获取任务类型失败");
                             ToastUtil.showShort(this, "获取任务类型失败");
                         }
                     }
@@ -105,7 +113,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
         setServiceInfo(info);
         LogUtils.e("onServiceConnected");
-
+        Preferences.set(ztApplication.getAppContext(),Constant.KEY_ACCESSIBILITY_SERVICE_TAG,true);
 //        LauncherUtils.clearPackage("com.baidu.appsearch");
 //        postedDelayExecute(2);
 //        Preferences.set(getBaseContext(), Constant.KEY_TASK_INIT_NOT_START, false);
@@ -120,6 +128,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
     @Override
     public boolean onUnbind(Intent intent) {
         LogUtils.e("onUnbind");
+        Preferences.set(ztApplication.getAppContext(),Constant.KEY_ACCESSIBILITY_SERVICE_TAG,false);
         return super.onUnbind(intent);
     }
 
@@ -167,7 +176,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
 
         if (nodeInfo == null) {
             LogUtils.e("nodeInfo  is null: 找不到输入焦点,继续执行 input text 输入");
-            String cmd = "input tap 205 80; sleep 2;input text"+getProductName();
+            String cmd = "input tap 205 80; sleep 2;input text" + getProductName();
             ShellUtils.execCommand(cmd, true);
             mHandler.sendEmptyMessage(3);
             return;

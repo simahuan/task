@@ -95,7 +95,7 @@ public class CommandService extends Service {
         initWebSocketConnect();
         initHeartBeat();
         initTickBootReceiver();
-        registerTickBootReceiver();
+//        registerTickBootReceiver();
     }
 
     @Override
@@ -270,7 +270,6 @@ public class CommandService extends Service {
         @Override
         public void onFailure(Throwable t, Response response) {
             super.onFailure(t, response);
-//            printExceptionLog(response);
             LogUtils.e("wsStatusListener-----onFailure");
             clearReportZero();
         }
@@ -295,7 +294,7 @@ public class CommandService extends Service {
         Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, 0);
         Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, 0);
         Preferences.set(CommandService.this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
-
+        Preferences.set(this,Constant.KEY_TASK_ERROR,false);
         Preferences.set(this, Constant.KEY_TASK_TYPE, "clean");
         ztApplication app = ztApplication.getInstance();
         if (null != app) {
@@ -414,9 +413,9 @@ public class CommandService extends Service {
     }
 
 
-    @Subscribe(threadMode = ThreadMode.BACKGROUND)
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onReceiverEventType(MessageEvent event) {
-        LogUtils.e(" ThreadMode.BACKGROUND" + event.toString());
+        LogUtils.e(" ThreadMode.MAIN" + event.toString());
         if (null != event) {
             mHandler.sendEmptyMessage(200);
 //            if (Constant.TASK_COMPLETED == event.getTaskType()) {

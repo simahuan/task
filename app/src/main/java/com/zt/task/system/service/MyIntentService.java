@@ -107,7 +107,8 @@ public class MyIntentService extends IntentService {
             EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_COMPLETED));
             LogUtils.e("任务全部完成...状态改变.");
         } else if (0 == taskStatus) {
-            EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_ERROR));
+//            EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_ERROR));
+            Preferences.set(this, Constant.KEY_TASK_ERROR, true);
             LogUtils.e("心跳0 处理空闲IDLE态，待接任务" + taskStatus + ";lastConut =" + lastCount);
         } else {
             LogUtils.e("其它情况..退出...taskStatus=" + taskStatus + ";lastConut =" + lastCount);
@@ -146,7 +147,7 @@ public class MyIntentService extends IntentService {
 
         boolean result = BaseAccessibilityService.getInstance().checkAccessibilityEnabled("com.zt.task.system/.service.MyAccessibilityService");
         LogUtils.e("AccessibilityService===result:" + result);
-        if (result) {
+        if (result || Preferences.getBoolean(ztApplication.getAppContext(), Constant.KEY_ACCESSIBILITY_SERVICE_TAG)) {
             Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, 0);
             Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, 0);
 
