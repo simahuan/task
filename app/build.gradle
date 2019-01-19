@@ -4,7 +4,7 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.zt.task.system"
-        minSdkVersion 18
+        minSdkVersion 23
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -18,6 +18,26 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    flavorDimensions("FUN")
+    productFlavors {
+        FUN {
+            dimension "FUN"
+        }
+
+        DailyTest {
+            versionName "1.0.0118"
+            buildConfigField 'String', 'WS', '"ws://192.168.1.191:2345/?uid=%1$s"'
+            return void
+        }
+
+        Product {
+            versionName "1.0.0rc1"
+            buildConfigField 'String', 'WS', '"ws://192.168.1.191:2345/?uid=%1$s"'
+            return void
+        }
+        return void
     }
 }
 
