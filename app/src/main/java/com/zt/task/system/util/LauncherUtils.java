@@ -18,6 +18,7 @@ public class LauncherUtils {
         }
     }
 
+
     /**
      * 启动第三方apk
      * 直接打开  每次都会启动到启动界面，每次都会干掉之前的，从新启动
@@ -25,8 +26,13 @@ public class LauncherUtils {
      */
     public static void launchAPK1(Context context, String packageName) {
         PackageManager packageManager = context.getPackageManager();
-        Intent it = packageManager.getLaunchIntentForPackage(packageName);
-        context.startActivity(it);
+        try{
+            Intent it = packageManager.getLaunchIntentForPackage(packageName);
+            context.startActivity(it);
+        }catch (Exception e){
+            e.printStackTrace();
+            LogUtils.e("com.baidu.appsearch 应用未安装");
+        }
     }
 
     /**
@@ -36,8 +42,14 @@ public class LauncherUtils {
      */
     public static void launchAPK3(Context context, String packageName) {
         Intent intent = getAppOpenIntentByPackageName(context, packageName);
+        if (null == intent){
+            LogUtils.e("com.baidu.appsearch 应用未安装");
+            // 用断点最合适
+            return;
+        }
         context.startActivity(intent);
     }
+
 
     public static Intent getAppOpenIntentByPackageName(Context context, String packageName) {
         String mainAct = null;

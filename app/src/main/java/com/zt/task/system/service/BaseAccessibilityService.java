@@ -13,6 +13,7 @@ import android.provider.Settings;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
 
 import com.zt.task.system.entity.Task;
 import com.zt.task.system.util.Constant;
@@ -185,6 +186,19 @@ public class BaseAccessibilityService extends AccessibilityService {
         return null;
     }
 
+    public AccessibilityNodeInfo findFocusView() {
+        AccessibilityNodeInfo targetNode = null;
+        List<AccessibilityWindowInfo> nodeInfoList = getWindows();
+        for (AccessibilityWindowInfo node : nodeInfoList) {
+            AccessibilityNodeInfo info = node.getRoot();
+            if (info == null) {
+                return null;
+            }
+            targetNode = info.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
+        }
+        return targetNode;
+    }
+
     /**
      * 查找对应ID的View
      *
@@ -202,6 +216,26 @@ public class BaseAccessibilityService extends AccessibilityService {
             for (AccessibilityNodeInfo nodeInfo : nodeInfoList) {
                 if (nodeInfo != null) {
                     return nodeInfo;
+                }
+            }
+        }
+        return null;
+    }
+
+    public AccessibilityNodeInfo findViewByID2(String id) {
+
+        List<AccessibilityWindowInfo> nodeInfoList = getWindows();
+        for (AccessibilityWindowInfo node : nodeInfoList) {
+            AccessibilityNodeInfo info = node.getRoot();
+            if (info == null) {
+                return null;
+            }
+            List<AccessibilityNodeInfo> nodeInfos = info.findAccessibilityNodeInfosByViewId(id);
+            if (nodeInfos != null && !nodeInfos.isEmpty()) {
+                for (AccessibilityNodeInfo nodeInfo : nodeInfos) {
+                    if (nodeInfo != null) {
+                        return nodeInfo;
+                    }
                 }
             }
         }
@@ -253,6 +287,7 @@ public class BaseAccessibilityService extends AccessibilityService {
      * @param second
      */
     public void postedDelayExecute(long second) {
+        // second = 3;
         String cmd = "sleep " + second + ";";
         ShellUtils.execCommand(cmd, true);
     }

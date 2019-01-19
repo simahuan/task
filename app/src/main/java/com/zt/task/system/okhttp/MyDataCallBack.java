@@ -42,7 +42,7 @@ public abstract class MyDataCallBack<T> {
      *
      * @param request
      */
-    public  abstract void onBefore(Request request);
+    public   void onBefore(Request request){};
 
     public abstract void requestSuccess(T result);
 
@@ -55,5 +55,5 @@ public abstract class MyDataCallBack<T> {
     /**
      * 在请求之后的方法，一般用于加载框隐藏
      */
-    public abstract void onAfter();
+    public  void onAfter(){};
 }

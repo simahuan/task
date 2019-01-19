@@ -33,6 +33,10 @@ public class HeartBeatOne implements Serializable {
         spentTime = pSpentTime;
     }
 
+    public HeartBeatOne(Context pContext, int pHeartbeat,boolean initNotStart) {
+        heartbeat = pHeartbeat;
+    }
+
     public HeartBeatOne(Context pContext, int pHeartbeat) {
         heartbeat = pHeartbeat;
         statistical = Preferences.getInt(pContext, Constant.KEY_TASK_EXECUTE_STATISTICAL);

@@ -65,9 +65,9 @@ public class OkHTTPManger {
 //                .addInterceptor(new HeaderInterceptor())
 //                .addNetworkInterceptor(new CacheInterceptor())
 //                .cache(cache)
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS)
-                .writeTimeout(10, TimeUnit.SECONDS)
+                .connectTimeout(20, TimeUnit.SECONDS)
+                .readTimeout(20, TimeUnit.SECONDS)
+                .writeTimeout(20, TimeUnit.SECONDS)
                 .cookieJar(new CookieJar() {
                     @Override
                     public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
@@ -78,7 +78,7 @@ public class OkHTTPManger {
                     public List<Cookie> loadForRequest(HttpUrl url) {
                         List<Cookie> cookies = cookieStore.get(url.host());
                         return cookies != null ? cookies : new ArrayList<Cookie>();
-//自动管理Cookie发送Request都不用管Cookie这个参数也不用去response获取新Cookie什么的了。还能通过cookieStore获取当前保存的Cookie。
+//          自动管理Cookie发送Request都不用管Cookie这个参数也不用去response获取新Cookie什么的了。还能通过cookieStore获取当前保存的Cookie。
                     }
                 });
     }

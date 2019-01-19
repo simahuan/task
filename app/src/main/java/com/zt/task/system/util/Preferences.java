@@ -16,6 +16,17 @@ public final class Preferences {
         return PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext());
     }
 
+    public static void set(Context context, String key, boolean value) {
+        SharedPreferences.Editor editor = Preferences.getSharedPreferences(context).edit();
+        editor.putBoolean(key, value);
+        editor.apply();
+    }
+
+    public static boolean getBoolean(Context context, String key) {
+        return Preferences.getSharedPreferences(context).getBoolean(key, false);
+    }
+
+
     public static void set(Context context, String key, String value) {
         SharedPreferences.Editor editor = Preferences.getSharedPreferences(context).edit();
         editor.putString(key, value);

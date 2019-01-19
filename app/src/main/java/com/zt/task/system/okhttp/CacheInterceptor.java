@@ -4,7 +4,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
-import com.zt.task.system.APP;
+import com.zt.task.system.ztApplication;
 
 import java.io.IOException;
 
@@ -54,7 +54,7 @@ public class CacheInterceptor implements Interceptor {
      * @return
      */
     private boolean isNetworkConnected() {
-        ConnectivityManager connectivity = (ConnectivityManager) APP.getInstance()
+        ConnectivityManager connectivity = (ConnectivityManager) ztApplication.getInstance()
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         if (null != connectivity) {
             NetworkInfo info = connectivity.getActiveNetworkInfo();

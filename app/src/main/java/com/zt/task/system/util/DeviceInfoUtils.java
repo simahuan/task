@@ -6,12 +6,11 @@ import android.telephony.TelephonyManager;
 public class DeviceInfoUtils {
     /**
      * 获取手机IMEI
-     *
      * @param context
      * @return
      */
     public static final String getIMEI(Context context) {
-        String empty = "没获取到IMEI";
+        String empty = "null";
         try {
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
             String imei = telephonyManager.getDeviceId();

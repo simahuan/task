@@ -3,14 +3,16 @@ package com.zt.task.system.service;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
-import com.zt.task.system.APP;
+import com.zt.task.system.entity.MessageEvent;
 import com.zt.task.system.util.Constant;
 import com.zt.task.system.util.LauncherUtils;
 import com.zt.task.system.util.LogUtils;
 import com.zt.task.system.util.Preferences;
 import com.zt.task.system.util.ShellUtils;
+import com.zt.task.system.ztApplication;
+
+import org.greenrobot.eventbus.EventBus;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -38,7 +40,6 @@ public class MyIntentService extends IntentService {
      *
      * @see IntentService
      */
-    // TODO: Customize helper method
     public static void startActionFoo(Context context, int taskCount, int taskTag) {
         Intent intent = new Intent(context, MyIntentService.class);
         intent.setAction(ACTION_FOO);
@@ -85,8 +86,8 @@ public class MyIntentService extends IntentService {
         reportTask(taskCount);
         int taskStatus = Preferences.getInt(this, Constant.KEY_TASK_STATUS);
 
-        int largerCount = APP.getInstance().getAmount();
-        int executeCount = APP.getInstance().getTaskCount();
+        int largerCount = ztApplication.getInstance().getAmount();
+        int executeCount = ztApplication.getInstance().getTaskCount();
         int lastCount = largerCount - executeCount;
         LogUtils.e("总任务数量：" + largerCount);
         LogUtils.e("剩余任务数量：" + lastCount);
@@ -94,30 +95,37 @@ public class MyIntentService extends IntentService {
 
         if (lastCount >= 1 && 1 == taskStatus) {
             LauncherUtils.clearPackage("com.baidu.appsearch");
+            postedDelayExecute(2);
             LauncherUtils.launchAPK3(this, "com.baidu.appsearch");
+            EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_EXECUTE));
         } else if (2 == taskStatus) {
-            Log.e(TAG, "任务取消.");
+            LogUtils.e("任务取消.");
+            EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_CANCEL));
             Preferences.set(this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
         } else if (1 == taskStatus) {
             Preferences.set(MyIntentService.this, Constant.KEY_TASK_STATUS, Constant.TASK_COMPLETED);
+            EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_COMPLETED));
             LogUtils.e("任务全部完成...状态改变.");
+        } else if (0 == taskStatus) {
+            EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_ERROR));
+            LogUtils.e("心跳0 处理空闲IDLE态，待接任务" + taskStatus + ";lastConut =" + lastCount);
         } else {
-            Log.e(TAG, "其它情况.......");
+            LogUtils.e("其它情况..退出...taskStatus=" + taskStatus + ";lastConut =" + lastCount);
         }
     }
 
     private void reportTask(int taskCount) {
-        int task_count = APP.getInstance().getTaskCount();
+        int task_count = ztApplication.getInstance().getTaskCount();
         task_count++;
-        APP.getInstance().setTaskCount(task_count);
-        Log.e(TAG, "task_count=" + task_count);
+        ztApplication.getInstance().setTaskCount(task_count);
+        LogUtils.e("task_count=" + task_count);
         Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, task_count);
         long createTime = Preferences.getLong(this, Constant.KEY_TASK_CREATE_TIME);
         long currentTime = System.currentTimeMillis();
-        Log.e(TAG, "executeMillis=" + (currentTime - createTime));
+        LogUtils.e("executeMillis=" + (currentTime - createTime));
         int second = (int) ((currentTime - createTime) / 1000);
         Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, second);
-        Log.e(TAG, "executeSecond=" + second);
+        LogUtils.e("executeSecond=" + second);
     }
 
     /**
@@ -130,21 +138,28 @@ public class MyIntentService extends IntentService {
         ShellUtils.execCommand(cmd, true);
         String cmd2 = "settings put secure accessibility_enabled  1";
         ShellUtils.execCommand(cmd2, true);
-
+        postedDelayExecute(2);
         String cmd3 = "settings put secure enabled_accessibility_services com.zt.task.system/com.zt.task.system.service.MyAccessibilityService";
         ShellUtils.execCommand(cmd3, true);
         String cmd4 = "settings put secure accessibility_enabled  1";
         ShellUtils.execCommand(cmd4, true);
 
         boolean result = BaseAccessibilityService.getInstance().checkAccessibilityEnabled("com.zt.task.system/.service.MyAccessibilityService");
+        LogUtils.e("AccessibilityService===result:" + result);
         if (result) {
             Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, 0);
             Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, 0);
 
             LauncherUtils.clearPackage("com.baidu.appsearch");
-            LauncherUtils.launchAPK3(this, "com.baidu.appsearch");
+            postedDelayExecute(2);
+            LauncherUtils.launchAPK1(ztApplication.getAppContext(), "com.baidu.appsearch");
         } else {
             BaseAccessibilityService.getInstance().goAccess();
         }
+    }
+
+    public void postedDelayExecute(long second) {
+        String cmd = "sleep " + second + ";";
+        ShellUtils.execCommand(cmd, true);
     }
 }

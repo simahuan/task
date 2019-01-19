@@ -8,7 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-
+import com.zt.task.system.exception.ExceptionEngine;
 import com.zt.task.system.util.LogUtils;
 
 import java.util.concurrent.locks.Lock;
@@ -62,10 +62,12 @@ public class WsManager implements IWsManager {
                         @Override
                         public void run() {
                             wsStatusListener.onOpen(response);
+                            LogUtils.e("[wsMainHandler.post里面]");
                         }
                     });
                 } else {
                     wsStatusListener.onOpen(response);
+                    LogUtils.e("[wsMainHandler.post外面----------------------------------]");
                 }
             }
         }
@@ -191,6 +193,8 @@ public class WsManager implements IWsManager {
                 mLock.unlock();
             }
         } catch (InterruptedException e) {
+            e.printStackTrace();
+            throw new RuntimeException(ExceptionEngine.catchException(e).getMessage());
         }
     }
 
@@ -247,7 +251,7 @@ public class WsManager implements IWsManager {
         long delay = reconnectCount * RECONNECT_INTERVAL;
 //        wsMainHandler.postDelayed(reconnectRunnable, delay > RECONNECT_MAX_TIME ? RECONNECT_MAX_TIME : delay);
         wsMainHandler.postDelayed(reconnectRunnable, 10000);
-        Log.e("liusehngjei", "reconnectCount[" + reconnectCount + "]");
+        LogUtils.e("reconnectCount[" + reconnectCount + "]");
         reconnectCount++;
 
     }
@@ -337,7 +341,6 @@ public class WsManager implements IWsManager {
     }
 
     public static final class Builder {
-
         private Context mContext;
         private String wsUrl;
         private boolean needReconnect = true;

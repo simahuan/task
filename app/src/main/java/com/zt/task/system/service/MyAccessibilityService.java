@@ -1,16 +1,22 @@
 package com.zt.task.system.service;
 
 import android.accessibilityservice.AccessibilityServiceInfo;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import com.zt.task.system.APP;
-import com.zt.task.system.util.LauncherUtils;
+import com.zt.task.system.util.Constant;
 import com.zt.task.system.util.LogUtils;
+import com.zt.task.system.util.Preferences;
+import com.zt.task.system.util.ShellUtils;
 import com.zt.task.system.util.ToastUtil;
+import com.zt.task.system.ztApplication;
 
 
 /**
@@ -19,7 +25,7 @@ import com.zt.task.system.util.ToastUtil;
 public class MyAccessibilityService extends BaseAccessibilityService {
     private static final String TAG = "MyAccessibilityService";
 
-    public static int taskCount = APP.getInstance().getAmount();
+    public static int taskCount = ztApplication.getInstance().getAmount();
 
     Handler mHandler = new Handler(new Handler.Callback() {
         @Override
@@ -41,7 +47,6 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                     stepFiveLongTailKeyWords();
                     break;
                 default:
-//                    Log.e(TAG, "没有事件触发");
                     break;
             }
             return false;
@@ -52,22 +57,28 @@ public class MyAccessibilityService extends BaseAccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent accessibilityEvent) {
         super.onAccessibilityEvent(accessibilityEvent);
         if (accessibilityEvent == null) {
-            Log.e(TAG, "没有事件触发");
             return;
         }
         int eventType = accessibilityEvent.getEventType();
         switch (eventType) {
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
-                Log.v(TAG, "typeWindowContentChanged");
+                LogUtils.v("typeWindowContentChanged");
                 break;
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
                 if (accessibilityEvent.getClassName().equals("com.baidu.appsearch.MainActivity")) {
                     AccessibilityNodeInfo nodeInfo = findViewByText("分类", true);
                     if (nodeInfo != null) {
                         performViewClick(nodeInfo);
-                        APP app = APP.getInstance();
-                        if (null != app && null != app.getTaskType()) {
-                            if ("刷词".equalsIgnoreCase(APP.getInstance().getTaskType().trim())) {
+                        String type;
+                        ztApplication app = ztApplication.getInstance();
+                        if (null != app && null != app.getTask()) {
+                            type = app.getTaskType();
+                        } else {
+                            type = Preferences.getString(this, Constant.KEY_TASK_TYPE);
+                        }
+                        LogUtils.e("type=" + type);
+                        if (null != type) {
+                            if ("刷词".equalsIgnoreCase(type)) {
                                 mHandler.sendEmptyMessage(1);
                             } else {
                                 ToastUtil.showShort(this, "刷词以外其它类型任务开发中..");
@@ -76,7 +87,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                             ToastUtil.showShort(this, "获取任务类型失败");
                         }
                     }
-                    Log.v(TAG, "typeWindowStateChanged");
+                    LogUtils.v("typeWindowStateChanged");
                     break;
                 }
         }
@@ -87,31 +98,38 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED | AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
         info.packageNames = new String[]{"com.baidu.appsearch"};
-        info.flags = AccessibilityServiceInfo.DEFAULT;
+        info.flags = AccessibilityServiceInfo.DEFAULT
+                | AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+                | AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
         info.notificationTimeout = 2000;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
         setServiceInfo(info);
-        Log.e(TAG, "onServiceConnected");
+        LogUtils.e("onServiceConnected");
 
-        LauncherUtils.clearPackage("com.baidu.appsearch");
-        LauncherUtils.launchAPK3(this, "com.baidu.appsearch");
-
+//        LauncherUtils.clearPackage("com.baidu.appsearch");
+//        postedDelayExecute(2);
+//        Preferences.set(getBaseContext(), Constant.KEY_TASK_INIT_NOT_START, false);
+//        LauncherUtils.launchAPK1(ztApplication.getAppContext(), "com.baidu.appsearch");
     }
 
     @Override
     public void onInterrupt() {
-        LogUtils.d("onInterrupt");
+        LogUtils.e("onInterrupt");
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        LogUtils.e("onUnbind");
+        return super.onUnbind(intent);
     }
 
     private void stepOneFindSearchBoxClick() {
         postedDelayExecute(5);
         AccessibilityNodeInfo nodeInfo = findViewByID("com.baidu.appsearch:id/libui_titlebar_search_box");
         if (null != nodeInfo) {
-            Log.e(TAG, "收到第一步任务 ");
-//            nodeInfo.recycle();
-//            mHandler.sendEmptyMessage(2);
+            LogUtils.e("收到第一步任务 ");
             boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-            Log.e(TAG, "the click result: " + result);
+            LogUtils.e("the click result: " + result);
             if (result) {
                 nodeInfo.recycle();
                 mHandler.sendEmptyMessage(2);
@@ -123,15 +141,19 @@ public class MyAccessibilityService extends BaseAccessibilityService {
     private void stepTwoInputKeyWords() {
         Log.e(TAG, "收到第二步任务,输入关键词 ");
         postedDelayExecute(5);
-        AccessibilityNodeInfo nodeInfo = findViewByID("com.baidu.appsearch:id/search_result_search_textinput");
+        AccessibilityNodeInfo nodeInfo = findViewByID2("com.baidu.appsearch:id/search_result_search_textinput");
         if (nodeInfo == null) {
-            Log.e(TAG, "nodeInfo  is null: ");
-            return;
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("label", getKeyWords());
+            String cmd = "sleep 2;input touchscreen swipe 205 80 205 80 2000;sleep 1;input tap 275 80;";
+            ShellUtils.execCommand(cmd, true);
+            clipboard.setPrimaryClip(clip);
+        } else {
+            boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+            LogUtils.e("focus result: " + result);
+            inputText(nodeInfo, getKeyWords());
+            nodeInfo.recycle();
         }
-        boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
-        Log.e(TAG, "focus result: " + result);
-        inputText(nodeInfo, getKeyWords());
-        nodeInfo.recycle();
         mHandler.sendEmptyMessage(5);
     }
 
@@ -139,32 +161,38 @@ public class MyAccessibilityService extends BaseAccessibilityService {
      * 长尾关键词 循环
      */
     private void stepFiveLongTailKeyWords() {
-        Log.e(TAG, "收到长尾关键词任务 ");
+        LogUtils.e("收到长尾关键词任务 ");
         postedDelayExecute(5);
-        AccessibilityNodeInfo nodeInfo = findViewByID("com.baidu.appsearch:id/search_result_search_textinput");
+        AccessibilityNodeInfo nodeInfo = findViewByID2("com.baidu.appsearch:id/search_result_search_textinput");
+
         if (nodeInfo == null) {
-            Log.e(TAG, "nodeInfo  is null: ");
+            LogUtils.e("nodeInfo  is null: 找不到输入焦点,继续执行 input text 输入");
+            String cmd = "input tap 205 80; sleep 2;input text"+getProductName();
+            ShellUtils.execCommand(cmd, true);
+            mHandler.sendEmptyMessage(3);
+            return;
+        } else {
+            boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+            LogUtils.e("focus result: " + result);
+            inputText(nodeInfo, getProductName());
+            nodeInfo.recycle();
+            mHandler.sendEmptyMessage(3);
             return;
         }
-        boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
-        Log.e(TAG, "focus result: " + result);
-        inputText(nodeInfo, getProductName());
-        nodeInfo.recycle();
-        mHandler.sendEmptyMessage(3);
     }
 
     private void stepThreeExecuteSearchTask() {
         postedDelayExecute(5);
         AccessibilityNodeInfo nodeInfo = findViewByID("com.baidu.appsearch:id/search_result_search");
         if (nodeInfo == null) {
-            Log.e(TAG, "stepThreeExecuteSearchTask  nodeInfo  is null: ");
+            LogUtils.e("stepThreeExecuteSearchTask  nodeInfo  is null: ");
             return;
         }
         boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        Log.e(TAG, "the click result: " + result);
+        LogUtils.e("the click result: " + result);
         if (result) {
             nodeInfo.recycle();
-            Log.e(TAG, "指令结束退出操作  ");
+            LogUtils.e("指令结束退出操作  ");
             postedDelayExecute(10);
             MyIntentService.startActionFoo(getBaseContext(), --taskCount, 0);
             performHomeClick();
@@ -193,4 +221,6 @@ public class MyAccessibilityService extends BaseAccessibilityService {
             }
         }
     }
+
+
 }

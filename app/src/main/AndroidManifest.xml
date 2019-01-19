@@ -11,24 +11,37 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.READ_LOGS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/>
+    <!-- setting数据库 -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
+
+    <!-- 屏保互动 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.GET_TASKS"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.WRITE_DREAM_STATE"/>
+    <uses-permission android:name="android.permission.READ_DREAM_STATE"/>
+    <uses-permission android:name="com.google.android.gallery3d.permission.PICASA_STORE"/>
 
     <application
-        android:name="com.zt.task.system.APP"
+        android:name=".ztApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/TranslucentTheme">
 
-        <activity android:name=".acvitity.ThirdActivity">
+        <activity android:name=".core.MainActivity"
+         android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".acvitity.BaseActivity"/>
+
+        <service android:name=".core.CommandService"/>
 
         <service
             android:name=".service.MyAccessibilityService"
@@ -45,7 +58,14 @@
         </service>
         <service
             android:name=".service.MyIntentService"
-            android:exported="false">
+            android:exported="true"/>
+
+        <receiver android:name=".receiver.BootCompletedReceiver"/>
+
+        <service
+            android:name=".service.DialogService"
+            android:enabled="true"
+            android:exported="true">
         </service>
     </application>
 
