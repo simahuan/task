@@ -23,7 +23,6 @@ import org.greenrobot.eventbus.EventBus;
  */
 public class MyIntentService extends IntentService {
     private static final String TAG = MyIntentService.class.getSimpleName();
-    // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
     private static final String ACTION_FOO = "com.example.administrator.accessibilityservicedemo.action.FOO";
     private static final String ACTION_TASK = "action.task";
 
