@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import com.zt.task.system.core.CommandService;
+import com.zt.task.system.util.LogUtils;
 import com.zt.task.system.util.ToastUtil;
 
 import java.util.List;
@@ -33,15 +35,16 @@ public class TickBroadcastReceiver extends BroadcastReceiver {
         ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         List<ActivityManager.RunningServiceInfo> RunningServiceInfo = manager.getRunningServices(Integer.MAX_VALUE);
         for (ActivityManager.RunningServiceInfo service : RunningServiceInfo) {
-//            ToastUtil.showShort(context, "ticked 服务检测");
+            ToastUtil.showShort(context, "ticked 服务检测");
             if ("com.zt.task.system.core.CommandService".equals(service.service.getClassName())) {
                 isServiceRunning = true;
             }
         }
         if (!isServiceRunning) {
             ToastUtil.showShort(context, "main线程退出");
-//            Intent i = new Intent(context, CommandService.class);
-//            context.startService(i);
+            LogUtils.e("TickBroadcastReceiver,检测到Service 退出");
+            Intent i = new Intent(context, CommandService.class);
+            context.startService(i);
         }
     }
 }

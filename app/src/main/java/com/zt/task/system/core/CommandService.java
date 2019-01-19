@@ -95,7 +95,7 @@ public class CommandService extends Service {
         initWebSocketConnect();
         initHeartBeat();
         initTickBootReceiver();
-//        registerTickBootReceiver();
+        registerTickBootReceiver();
     }
 
     @Override
@@ -154,6 +154,11 @@ public class CommandService extends Service {
 
     private String formatWebSocket() {
         String deviceid = DeviceInfoUtils.getIMEI(getBaseContext());
+        ToastUtil.showDefultToast(this,"imei = "+deviceid);
+        if (deviceid == null){
+            ToastUtil.showDefultToast(this,"imei == null 设备号为空 ");
+            return  null;
+        }
         return String.format("ws://192.168.1.191:2345/?uid=%1$s", deviceid);
     }
 
@@ -213,6 +218,7 @@ public class CommandService extends Service {
                     Command cmd = Command.parse(object);
                     Preferences.set(getBaseContext(), Constant.KEY_COMMAND_BEAN, cmd);
 
+                    ToastUtil.showDefultToast(ztApplication.getAppContext(),"任务编号："+String.valueOf(cmd.getId()));
                     if (!TextUtils.isEmpty(cmd.getTokens())
                             && !TextUtils.isEmpty(cmd.getUrl())
                             && cmd.getStatus() == 1

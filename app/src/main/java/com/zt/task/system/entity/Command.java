@@ -7,7 +7,13 @@ import org.json.JSONObject;
 
 public class Command implements Parcelable {
     private String tokens;
+    /**
+     *
+     */
     private int taskid;
+    /**
+     * 任务编号
+     */
     private int id;
     private long ts;
     private String url;

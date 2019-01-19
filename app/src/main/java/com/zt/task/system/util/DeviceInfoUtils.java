@@ -10,7 +10,7 @@ public class DeviceInfoUtils {
      * @return
      */
     public static final String getIMEI(Context context) {
-        String empty = "null";
+        String empty = null;
         try {
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
             String imei = telephonyManager.getDeviceId();
