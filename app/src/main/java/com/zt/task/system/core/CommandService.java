@@ -22,7 +22,6 @@ import com.zt.task.system.R;
 import com.zt.task.system.entity.Command;
 import com.zt.task.system.entity.HeartBeatThree;
 import com.zt.task.system.entity.HeartBeatTwo;
-import com.zt.task.system.entity.HeartBeatZero;
 import com.zt.task.system.entity.MessageEvent;
 import com.zt.task.system.entity.Task;
 import com.zt.task.system.exception.ExceptionEngine;
@@ -154,10 +153,10 @@ public class CommandService extends Service {
 
     private String formatWebSocket() {
         String deviceid = DeviceInfoUtils.getIMEI(getBaseContext());
-        ToastUtil.showDefultToast(this,"imei = "+deviceid);
-        if (deviceid == null){
-            ToastUtil.showDefultToast(this,"imei == null 设备号为空 ");
-            return  null;
+        ToastUtil.showDefultToast(this, "imei = " + deviceid);
+        if (deviceid == null) {
+            ToastUtil.showDefultToast(this, "imei == null 设备号为空 ");
+            return null;
         }
         return String.format("ws://192.168.1.191:2345/?uid=%1$s", deviceid);
     }
@@ -218,7 +217,7 @@ public class CommandService extends Service {
                     Command cmd = Command.parse(object);
                     Preferences.set(getBaseContext(), Constant.KEY_COMMAND_BEAN, cmd);
 
-                    ToastUtil.showDefultToast(ztApplication.getAppContext(),"任务编号："+String.valueOf(cmd.getId()));
+                    ToastUtil.showDefultToast(ztApplication.getAppContext(), "任务编号：" + String.valueOf(cmd.getId()));
                     if (!TextUtils.isEmpty(cmd.getTokens())
                             && !TextUtils.isEmpty(cmd.getUrl())
                             && cmd.getStatus() == 1
@@ -281,16 +280,6 @@ public class CommandService extends Service {
         }
     };
 
-    private void printExceptionLog(Response response) {
-        try {
-            LogUtils.e("wsStatusListener-----onOpen======" + response.body().string());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(ExceptionEngine.catchException(e).getMsg());
-        }
-    }
-
 
     /**
      * 清空上报数据
@@ -300,13 +289,14 @@ public class CommandService extends Service {
         Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, 0);
         Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, 0);
         Preferences.set(CommandService.this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
-        Preferences.set(this,Constant.KEY_TASK_ERROR,false);
+        Preferences.set(this, Constant.KEY_TASK_ERROR, false);
         Preferences.set(this, Constant.KEY_TASK_TYPE, "clean");
         ztApplication app = ztApplication.getInstance();
         if (null != app) {
             app.setTask(null);
         }
         ztApplication.getInstance().setTaskCount(0);
+        sendCleanTaskStatusZero();
     }
 
     private void connectedRouter(String url) {
@@ -328,14 +318,21 @@ public class CommandService extends Service {
         }
     }
 
+    /**
+     * 清除HeartZero  TaskStatus = 0;
+     */
+    private void sendCleanTaskStatusZero() {
+        sendMessageToRouter(getHeartbeat_zero());
+    }
+
 
     private Handler mHandler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message pMessage) {
             switch (pMessage.what) {
                 case 200:
-                    heartbeat_zero = GsonUtil.createGsonString(new HeartBeatZero(0));
-                    getHeartBeatOne();
+                    heartbeat_zero = getHeartbeat_zero();
+                    heartbeat_one = getHeartBeatOne();
                     LogUtils.i("heartbeat_one=" + heartbeat_one);
                     heartbeat_two = GsonUtil.createGsonString(new HeartBeatTwo(2));
                     heartbeat_three = GsonUtil.createGsonString(new HeartBeatThree(CommandService.this, 3));
@@ -352,6 +349,16 @@ public class CommandService extends Service {
             return false;
         }
     });
+
+    private String getHeartbeat_zero() {
+        JSONObject obj = new JSONObject();
+        try {
+            heartbeat_zero = obj.put("heartbeat", 0).toString();
+        } catch (Exception pE) {
+            pE.printStackTrace();
+        }
+        return heartbeat_zero;
+    }
 
     private String getHeartBeatOne() {
         JSONObject obj = new JSONObject();
@@ -454,10 +461,8 @@ public class CommandService extends Service {
             }
         } catch (JSONException e) {
             e.printStackTrace();
+            sendCleanTaskStatusZero();
             LogUtils.e("发生异常TASK_BEAN=", ExceptionEngine.catchException(e).getMsg());
-        } catch (Exception e) {
-            e.printStackTrace();
-            LogUtils.e("发生异常Exception=", ExceptionEngine.catchException(e).getMsg());
         }
     }
 
