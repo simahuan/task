@@ -25,7 +25,7 @@ public class Constant {
     public static final String KEY_TASK_SPENT_TIME = "key_task_spent_time";
 
     public static final String KEY_TASK_ERROR = "key_task_error";
-
+    public static final String KEY_TASK_ID = "key_task_id";
     public static final String KEY_ACCESSIBILITY_SERVICE_TAG = "key_accessibility_service_tag";
 
     public static final int TASK_IDLE = 0;

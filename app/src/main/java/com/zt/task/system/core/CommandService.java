@@ -201,9 +201,11 @@ public class CommandService extends Service {
             LogUtils.e(Spanny.spanText("服务器连接成功\n\n", new ForegroundColorSpan(
                     ContextCompat.getColor(getBaseContext(), R.color.colorPrimary))).toString());
             clearReportZero();
-
         }
 
+        /**
+         *  webSocket消息领到任务
+         */
         @Override
         public void onMessage(String text) {
             LogUtils.d("wsStatusListener-----onMessage");
@@ -216,7 +218,7 @@ public class CommandService extends Service {
                     JSONObject object = new JSONObject(text);
                     Command cmd = Command.parse(object);
                     Preferences.set(getBaseContext(), Constant.KEY_COMMAND_BEAN, cmd);
-
+                    Preferences.set(getBaseContext(), Constant.KEY_TASK_ID, cmd.getId());
                     ToastUtil.showDefultToast(ztApplication.getAppContext(), "任务编号：" + String.valueOf(cmd.getId()));
                     if (!TextUtils.isEmpty(cmd.getTokens())
                             && !TextUtils.isEmpty(cmd.getUrl())
@@ -291,6 +293,7 @@ public class CommandService extends Service {
         Preferences.set(CommandService.this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
         Preferences.set(this, Constant.KEY_TASK_ERROR, false);
         Preferences.set(this, Constant.KEY_TASK_TYPE, "clean");
+        Preferences.set(getBaseContext(), Constant.KEY_TASK_ID, -1);
         ztApplication app = ztApplication.getInstance();
         if (null != app) {
             app.setTask(null);
