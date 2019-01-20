@@ -40,8 +40,9 @@
         <!--</intent-filter>-->
         <!--</activity>-->
 
-        <service android:name=".core.CommandService">
-
+        <service
+            android:name=".core.CommandService"
+        >
         </service>
 
         <service

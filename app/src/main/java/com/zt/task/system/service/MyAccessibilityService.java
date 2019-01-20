@@ -92,6 +92,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                             }
                         } else {
                             LogUtils.e("获取任务类型失败");
+                            Preferences.set(this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
                             ToastUtil.showShort(this, "获取任务类型失败");
                         }
                     }
@@ -113,7 +114,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
         setServiceInfo(info);
         LogUtils.e("onServiceConnected");
-        Preferences.set(ztApplication.getAppContext(),Constant.KEY_ACCESSIBILITY_SERVICE_TAG,true);
+        Preferences.set(ztApplication.getAppContext(), Constant.KEY_ACCESSIBILITY_SERVICE_TAG, true);
 //        LauncherUtils.clearPackage("com.baidu.appsearch");
 //        postedDelayExecute(2);
 //        Preferences.set(getBaseContext(), Constant.KEY_TASK_INIT_NOT_START, false);
@@ -128,7 +129,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
     @Override
     public boolean onUnbind(Intent intent) {
         LogUtils.e("onUnbind");
-        Preferences.set(ztApplication.getAppContext(),Constant.KEY_ACCESSIBILITY_SERVICE_TAG,false);
+        Preferences.set(ztApplication.getAppContext(), Constant.KEY_ACCESSIBILITY_SERVICE_TAG, false);
         return super.onUnbind(intent);
     }
 

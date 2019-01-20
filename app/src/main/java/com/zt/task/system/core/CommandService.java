@@ -86,15 +86,21 @@ public class CommandService extends Service {
 
 
     @Override
+    public void onLowMemory() {
+        LogUtils.e("CommandService ..onLowMemory.....调用 ");
+        super.onLowMemory();
+    }
+
+    @Override
     public void onCreate() {
         super.onCreate();
         LogUtils.e("CommandService---onCreate---- 服务调用");
         registerEventBus();
-        clearReportZero();
         initWebSocketConnect();
         initHeartBeat();
         initTickBootReceiver();
         registerTickBootReceiver();
+        clearReportZero();
     }
 
     @Override
@@ -241,6 +247,7 @@ public class CommandService extends Service {
                     }
                 } catch (Exception pE) {
                     pE.printStackTrace();
+                    LogUtils.e("command 命令解析出错" + pE.getMessage());
                     ToastUtil.showShort(getBaseContext(), "command 命令解析出错" + pE.getMessage());
                 }
             }
@@ -287,7 +294,7 @@ public class CommandService extends Service {
      * 清空上报数据
      */
     private void clearReportZero() {
-        LogUtils.e("清空上报数据..task_status = 0..");
+        LogUtils.e("清空上报数据..task_status = "+Preferences.getInt(getBaseContext(),Constant.KEY_TASK_STATUS));
         Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, 0);
         Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, 0);
         Preferences.set(CommandService.this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
@@ -336,7 +343,7 @@ public class CommandService extends Service {
                 case 200:
                     heartbeat_zero = getHeartbeat_zero();
                     heartbeat_one = getHeartBeatOne();
-                    LogUtils.i("heartbeat_one=" + heartbeat_one);
+//                    LogUtils.i("heartbeat_one=" + heartbeat_one);
                     heartbeat_two = GsonUtil.createGsonString(new HeartBeatTwo(2));
                     heartbeat_three = GsonUtil.createGsonString(new HeartBeatThree(CommandService.this, 3));
 
@@ -434,13 +441,6 @@ public class CommandService extends Service {
         LogUtils.e(" ThreadMode.MAIN" + event.toString());
         if (null != event) {
             mHandler.sendEmptyMessage(200);
-//            if (Constant.TASK_COMPLETED == event.getTaskType()) {
-//                          mHandler.sendEmptyMessage(200);
-//            } else if (Constant.TASK_CANCEL == event.getTaskType()) {
-//
-//            } else if (Constant.TASK_EXECUTE == event.getTaskType()) {
-//
-//            }
         }
     }
 

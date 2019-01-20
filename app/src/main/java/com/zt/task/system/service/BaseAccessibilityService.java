@@ -287,7 +287,7 @@ public class BaseAccessibilityService extends AccessibilityService {
      * @param second
      */
     public void postedDelayExecute(long second) {
-        // second = 3;
+        second = 3;
         String cmd = "sleep " + second + ";";
         ShellUtils.execCommand(cmd, true);
     }

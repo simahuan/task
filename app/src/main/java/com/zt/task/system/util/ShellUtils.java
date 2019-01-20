@@ -116,7 +116,7 @@ public class ShellUtils {
             }
         }
 
-        LogUtils.e( "--result=" + result + "--success-:" + successMsg.toString() + "---error--:" + errorMsg.toString()+"commands:"+commands[0].toString());
+//        LogUtils.e( "--result=" + result + "--success-:" + successMsg.toString() + "---error--:" + errorMsg.toString()+"commands:"+commands[0].toString());
         return new CommandResult(result, successMsg == null ? null
                 : successMsg.toString(), errorMsg == null ? null
                 : errorMsg.toString());
