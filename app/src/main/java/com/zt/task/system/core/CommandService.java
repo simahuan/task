@@ -25,6 +25,8 @@ import com.zt.task.system.entity.HeartBeatTwo;
 import com.zt.task.system.entity.MessageEvent;
 import com.zt.task.system.entity.Task;
 import com.zt.task.system.exception.ExceptionEngine;
+import com.zt.task.system.monitor.WifiConfig;
+import com.zt.task.system.monitor.WifiMonitor;
 import com.zt.task.system.okhttp.MyDataCallBack;
 import com.zt.task.system.okhttp.OkHTTPManger;
 import com.zt.task.system.receiver.TickBroadcastReceiver;
@@ -59,7 +61,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okio.ByteString;
 
-public class CommandService extends Service {
+public class CommandService extends Service implements WifiMonitor.WifiStateCallback {
     private final static String TAG = "CommandService";
     private WsManager wsManager;
 
@@ -71,6 +73,19 @@ public class CommandService extends Service {
     private TickBroadcastReceiver mTickBroadcastReceiver;
 
     private AidlVpnSettingsServer mAidlVpnSettingsServer;
+
+    @Override
+    public void onConnected(WifiConfig config) {
+            ToastUtil.show(this,"网络连接",Toast.LENGTH_SHORT);
+            LogUtils.e("网络连接");
+    }
+
+    @Override
+    public void onDisconnected(WifiConfig config) {
+        ToastUtil.show(this,"网络断开",Toast.LENGTH_SHORT);
+        LogUtils.e("网络断开");
+    }
+
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
@@ -91,10 +106,19 @@ public class CommandService extends Service {
         super.onLowMemory();
     }
 
+    private void startWifiMonitor() {
+        WifiMonitor.getInstance().startMonitor(this);
+    }
+
+    private void stopWifiMonitor() {
+        WifiMonitor.getInstance().stopMonitor(this);
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
         LogUtils.e("CommandService---onCreate---- 服务调用");
+        startWifiMonitor();
         registerEventBus();
         initWebSocketConnect();
         initHeartBeat();
@@ -129,6 +153,7 @@ public class CommandService extends Service {
 //        stopWebSocketConnect();
         unregisterEventBus();
         stopHeartBeat();
+        startWifiMonitor();
     }
 
     @Nullable
@@ -294,7 +319,7 @@ public class CommandService extends Service {
      * 清空上报数据
      */
     private void clearReportZero() {
-        LogUtils.e("清空上报数据..task_status = "+Preferences.getInt(getBaseContext(),Constant.KEY_TASK_STATUS));
+        LogUtils.e("清空上报数据..task_status = " + Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS));
         Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, 0);
         Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, 0);
         Preferences.set(CommandService.this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
@@ -306,7 +331,6 @@ public class CommandService extends Service {
             app.setTask(null);
         }
         ztApplication.getInstance().setTaskCount(0);
-        sendCleanTaskStatusZero();
     }
 
     private void connectedRouter(String url) {
@@ -440,7 +464,7 @@ public class CommandService extends Service {
     public void onReceiverEventType(MessageEvent event) {
         LogUtils.e(" ThreadMode.MAIN" + event.toString());
         if (null != event) {
-            mHandler.sendEmptyMessage(200);
+//            mHandler.sendEmptyMessage(200);
         }
     }
 
@@ -464,7 +488,8 @@ public class CommandService extends Service {
             }
         } catch (JSONException e) {
             e.printStackTrace();
-            sendCleanTaskStatusZero();
+            Preferences.set(getBaseContext(),Constant.KEY_TASK_STATUS,Constant.TASK_IDLE);
+//            sendCleanTaskStatusZero();
             LogUtils.e("发生异常TASK_BEAN=", ExceptionEngine.catchException(e).getMsg());
         }
     }
@@ -486,4 +511,6 @@ public class CommandService extends Service {
         }
         return result;
     }
+
+
 }

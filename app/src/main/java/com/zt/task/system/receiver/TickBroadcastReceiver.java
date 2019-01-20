@@ -6,9 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 
 import com.zt.task.system.core.CommandService;
-import com.zt.task.system.util.Constant;
-import com.zt.task.system.util.LogUtils;
-import com.zt.task.system.util.Preferences;
 
 import java.util.List;
 
@@ -37,7 +34,7 @@ public class TickBroadcastReceiver extends BroadcastReceiver {
         List<ActivityManager.RunningServiceInfo> RunningServiceInfo = manager.getRunningServices(Integer.MAX_VALUE);
         for (ActivityManager.RunningServiceInfo service : RunningServiceInfo) {
 //            ToastUtil.showShort(context, "ticked 服务检测:领取任务编号:" + Preferences.getInt(context, Constant.KEY_TASK_ID));
-            LogUtils.e("ticked 服务检测:领取任务编号:" + Preferences.getInt(context, Constant.KEY_TASK_ID));
+//            LogUtils.e("ticked 服务检测:领取任务编号:" + Preferences.getInt(context, Constant.KEY_TASK_ID));
             if ("com.zt.task.system.core.CommandService".equals(service.service.getClassName())) {
 //                LogUtils.e("TickBroadcastReceiver,CommandService 活动");
                 isServiceRunning = true;
