@@ -14,6 +14,7 @@ import com.tencent.bugly.crashreport.CrashReport;
 import com.zt.task.system.entity.Task;
 import com.zt.task.system.service.BaseAccessibilityService;
 import com.zt.task.system.util.Constant;
+import com.zt.task.system.util.LogUtils;
 import com.zt.task.system.util.ParcelableUtil;
 import com.zt.task.system.util.Preferences;
 
@@ -51,8 +52,7 @@ public class ztApplication extends Application {
         mActivityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         BaseAccessibilityService.getInstance().init(this);
         Preferences.set(ztApplication.getAppContext(), Constant.KEY_ACCESSIBILITY_SERVICE_TAG, false);
-//        Preferences.set(getBaseContext(), Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
-//        LogUtils.e("Application initTask");
+        LogUtils.e("Application initTask");
     }
 
     private void printLog() {

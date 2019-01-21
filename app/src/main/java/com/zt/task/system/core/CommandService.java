@@ -436,9 +436,10 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
 
     private void sendMessageToRouter(String content) {
         if (!TextUtils.isEmpty(content)) {
-            LogUtils.e("sendMessageToRouter=" + content);
+
             if (wsManager != null && wsManager.isWsConnected()) {
                 boolean isSend = wsManager.sendMessage(content);
+                LogUtils.e("sendMessageToRouter=" + content+"isSend:"+isSend);
                 if (isSend) {
                     LogUtils.i(Spanny.spanText(
                             "我和服务器连接成功: " + DateUtils.formatDateTime(getBaseContext(), System.currentTimeMillis(),

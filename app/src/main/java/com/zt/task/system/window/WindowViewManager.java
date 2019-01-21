@@ -18,7 +18,6 @@ import android.widget.FrameLayout;
  * @version 1.0, 2014-6-26 上午10:57:59
  */
 public class WindowViewManager implements WindowController {
-
 	private final static boolean DEBUG = true;
 	private static String TAG = "KeyguardViewManager";
 
@@ -34,9 +33,9 @@ public class WindowViewManager implements WindowController {
 	/***
 	 * @param context
 	 *            Used to create views.
-	 * @param viewManager
+	 * @param  viewManager
 	 *            Keyguard will be attached to this.
-	 * @param callback
+	 * @param  callback
 	 *            Used to notify of changes.
 	 */
 	public WindowViewManager(Context context) {
