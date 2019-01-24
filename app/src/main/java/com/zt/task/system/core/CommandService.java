@@ -156,6 +156,7 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
         startWifiMonitor();
     }
 
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

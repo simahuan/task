@@ -24,6 +24,7 @@
     <uses-permission android:name="android.permission.READ_DREAM_STATE"/>
     <uses-permission android:name="com.google.android.gallery3d.permission.PICASA_STORE"/>
 
+
     <application
         android:name=".ztApplication"
         android:allowBackup="true"
@@ -32,18 +33,13 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!--<activity android:name=".core.MainActivity"-->
-        <!--android:launchMode="singleTop">-->
-        <!--<intent-filter>-->
-        <!--<action android:name="android.intent.action.MAIN"/>-->
-        <!--<category android:name="android.intent.category.LAUNCHER"/>-->
-        <!--</intent-filter>-->
-        <!--</activity>-->
+        <!--<activity-->
+        <!--android:name="com.tencent.bugly.beta.ui.BetaActivity"-->
+        <!--android:configChanges="keyboardHidden|orientation|screenSize|locale"-->
+        <!--android:theme="@android:style/Theme.Translucent"/>-->
 
         <service
-            android:name=".core.CommandService"
-        >
-        </service>
+            android:name=".core.CommandService"/>
 
         <service
             android:name=".service.MyAccessibilityService"
@@ -74,6 +70,7 @@
             android:enabled="true"
             android:exported="true">
         </service>
+
     </application>
 
 </manifest>

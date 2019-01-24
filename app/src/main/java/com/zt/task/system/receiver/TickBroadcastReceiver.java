@@ -29,6 +29,7 @@ public class TickBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void checkServiceRunning(Context context) {
+//        ToastUtil.showShort(context, "ticked 服务检测:收到心跳");
         boolean isServiceRunning = false;
         ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         List<ActivityManager.RunningServiceInfo> RunningServiceInfo = manager.getRunningServices(Integer.MAX_VALUE);

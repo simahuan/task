@@ -49,6 +49,10 @@ public class ztApplication extends Application {
 
     private void initTask() {
         CrashReport.initCrashReport(getApplicationContext(), "cd4ba6552d", false);
+//        Bugly.init(this, "cd4ba6552d", false);
+//        Bugly.setIsDevelopmentDevice(this, true);
+//        Beta.checkUpgrade(true,false);
+
         mActivityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         BaseAccessibilityService.getInstance().init(this);
         Preferences.set(ztApplication.getAppContext(), Constant.KEY_ACCESSIBILITY_SERVICE_TAG, false);
