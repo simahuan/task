@@ -69,3 +69,5 @@ fastlane/readme.md
 .gitignore
 .idea/misc.xml
 .idea/runConfigurations.xml
+.idea/vcs.xml
+.idea/modules.xml
