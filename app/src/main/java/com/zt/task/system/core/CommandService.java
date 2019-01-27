@@ -18,6 +18,7 @@ import android.text.style.ForegroundColorSpan;
 import android.widget.Toast;
 
 import com.android.settings.vpn2.AidlVpnSettingsServer;
+import com.zt.task.system.BuildConfig;
 import com.zt.task.system.R;
 import com.zt.task.system.entity.Command;
 import com.zt.task.system.entity.HeartBeatThree;
@@ -26,6 +27,8 @@ import com.zt.task.system.entity.HeartBeatZero;
 import com.zt.task.system.entity.MessageEvent;
 import com.zt.task.system.entity.Task;
 import com.zt.task.system.exception.ExceptionEngine;
+import com.zt.task.system.monitor.WifiConfig;
+import com.zt.task.system.monitor.WifiMonitor;
 import com.zt.task.system.okhttp.MyDataCallBack;
 import com.zt.task.system.okhttp.OkHTTPManger;
 import com.zt.task.system.receiver.TickBroadcastReceiver;
@@ -60,7 +63,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okio.ByteString;
 
-public class CommandService extends Service {
+public class CommandService extends Service implements WifiMonitor.WifiStateCallback {
     private final static String TAG = "CommandService";
     private WsManager wsManager;
 
@@ -87,6 +90,18 @@ public class CommandService extends Service {
 
 
     @Override
+    public void onConnected(WifiConfig config) {
+        ToastUtil.show(this, "onConnected", Toast.LENGTH_SHORT);
+        LogUtils.e("网络连接");
+    }
+
+    @Override
+    public void onDisconnected(WifiConfig config) {
+        ToastUtil.show(this, "onDisconnected", Toast.LENGTH_SHORT);
+        LogUtils.e("网络断开");
+    }
+
+    @Override
     public void onCreate() {
         super.onCreate();
         LogUtils.e("CommandService---onCreate---- 服务调用");
@@ -96,6 +111,9 @@ public class CommandService extends Service {
         initHeartBeat();
         initTickBootReceiver();
 //        registerTickBootReceiver();
+
+        WifiMonitor.getInstance().startMonitor(this);
+        WifiMonitor.getInstance().registerObserver(this);
     }
 
     @Override
@@ -120,7 +138,6 @@ public class CommandService extends Service {
     public void onDestroy() {
         super.onDestroy();
         LogUtils.e("ComanndeService   onDestrory......");
-
 //        stopWebSocketConnect();
         unregisterEventBus();
         stopHeartBeat();
@@ -147,8 +164,8 @@ public class CommandService extends Service {
     }
 
     private void initWebSocketConnect() {
-//        String webSocketAdd = String.format(BuildConfig.WS, DeviceInfoUtils.getIMEI(getBaseContext()));
-        String webSocketAdd = formatWebSocket();
+        String webSocketAdd = String.format(BuildConfig.WS, DeviceInfoUtils.getIMEI(getBaseContext()));
+//        String webSocketAdd = formatWebSocket();
         connectedRouter(webSocketAdd);
     }
 
@@ -196,8 +213,7 @@ public class CommandService extends Service {
             LogUtils.e("wsStatusListener-----onOpen======");
             LogUtils.e(Spanny.spanText("服务器连接成功\n\n", new ForegroundColorSpan(
                     ContextCompat.getColor(getBaseContext(), R.color.colorPrimary))).toString());
-            clearReportZero();
-
+//            clearReportZero();
         }
 
         @Override
@@ -278,7 +294,6 @@ public class CommandService extends Service {
     private void printExceptionLog(Response response) {
         try {
             LogUtils.e("wsStatusListener-----onOpen======" + response.body().string());
-
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(ExceptionEngine.catchException(e).getMsg());
@@ -294,7 +309,7 @@ public class CommandService extends Service {
         Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, 0);
         Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, 0);
         Preferences.set(CommandService.this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
-        Preferences.set(this,Constant.KEY_TASK_ERROR,false);
+        Preferences.set(this, Constant.KEY_TASK_ERROR, false);
         Preferences.set(this, Constant.KEY_TASK_TYPE, "clean");
         ztApplication app = ztApplication.getInstance();
         if (null != app) {
@@ -386,7 +401,6 @@ public class CommandService extends Service {
         }
     }
 
-
     private void sendMessageToRouter(String content) {
         if (!TextUtils.isEmpty(content)) {
             LogUtils.e("sendMessageToRouter=" + content);
@@ -418,13 +432,6 @@ public class CommandService extends Service {
         LogUtils.e(" ThreadMode.MAIN" + event.toString());
         if (null != event) {
             mHandler.sendEmptyMessage(200);
-//            if (Constant.TASK_COMPLETED == event.getTaskType()) {
-//                          mHandler.sendEmptyMessage(200);
-//            } else if (Constant.TASK_CANCEL == event.getTaskType()) {
-//
-//            } else if (Constant.TASK_EXECUTE == event.getTaskType()) {
-//
-//            }
         }
     }
 
@@ -449,6 +456,7 @@ public class CommandService extends Service {
         } catch (JSONException e) {
             e.printStackTrace();
             LogUtils.e("发生异常TASK_BEAN=", ExceptionEngine.catchException(e).getMsg());
+            mHandler.sendEmptyMessage(200);
         } catch (Exception e) {
             e.printStackTrace();
             LogUtils.e("发生异常Exception=", ExceptionEngine.catchException(e).getMsg());
@@ -472,4 +480,6 @@ public class CommandService extends Service {
         }
         return result;
     }
+
+
 }

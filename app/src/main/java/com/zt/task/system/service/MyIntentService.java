@@ -144,6 +144,11 @@ public class MyIntentService extends IntentService {
         ShellUtils.execCommand(cmd3, true);
         String cmd4 = "settings put secure accessibility_enabled  1";
         ShellUtils.execCommand(cmd4, true);
+//        postedDelayExecute(2);
+//        String cmd5 = "settings put secure enabled_accessibility_services com.zt.task.system/com.zt.task.system.service.MyAccessibilityService";
+//        ShellUtils.execCommand(cmd5, true);
+//        String cmd6 = "settings put secure accessibility_enabled  1";
+//        ShellUtils.execCommand(cmd6, true);
 
         boolean result = BaseAccessibilityService.getInstance().checkAccessibilityEnabled("com.zt.task.system/.service.MyAccessibilityService");
         LogUtils.e("AccessibilityService===result:" + result);

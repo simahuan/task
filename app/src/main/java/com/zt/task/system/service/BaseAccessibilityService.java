@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -49,13 +50,33 @@ public class BaseAccessibilityService extends AccessibilityService {
 
 
     protected static String getKeyWords() {
-        return getTask().getKeyWords();
+        String regex = ",|，|\\s+";
+        String words = getTask().getKeyWords();
+        String key = words; //交付所有词条
+        if (!TextUtils.isEmpty(words)) {
+            String[] arr = words.split(regex);
+            key = arr[0];
+        }
+        return key;
     }
 
     protected int getRecycleCount() {
         return getTask().getAmount();
     }
 
+    protected String[] getLongTailWords() {
+        String[] arr = null;
+        String regex = ",|，|\\s+";
+        String words = getTask().getKeyWords();
+        if (!TextUtils.isEmpty(words)) {
+            arr = words.split(regex);
+        }
+        return arr;
+    }
+
+    protected boolean isLongTailsWords() {
+        return getLongTailWords().length > 1;
+    }
 
     protected String getProductName() {
         return getTask().getProductName();

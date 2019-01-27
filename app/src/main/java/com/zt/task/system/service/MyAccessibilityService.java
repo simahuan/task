@@ -26,7 +26,12 @@ public class MyAccessibilityService extends BaseAccessibilityService {
     private static final String TAG = "MyAccessibilityService";
 
     public static int taskCount = ztApplication.getInstance().getAmount();
+    public static boolean isLoopFinish = false;
 
+
+    protected enum TypeEnum {
+
+    }
 
     private Handler mHandler = new Handler(new Handler.Callback() {
         @Override
@@ -98,26 +103,26 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                     LogUtils.v("typeWindowStateChanged");
                     break;
                 }
+            default:
+                break;
         }
     }
 
     @Override
     protected void onServiceConnected() {
-        AccessibilityServiceInfo info = new AccessibilityServiceInfo();
+        LogUtils.e("onServiceConnected");
+        AccessibilityServiceInfo info = getServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED | AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
         info.packageNames = new String[]{"com.baidu.appsearch"};
         info.flags = AccessibilityServiceInfo.DEFAULT
                 | AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
                 | AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
-        info.notificationTimeout = 2000;
+        info.notificationTimeout = 1000;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
         setServiceInfo(info);
-        LogUtils.e("onServiceConnected");
-        Preferences.set(ztApplication.getAppContext(),Constant.KEY_ACCESSIBILITY_SERVICE_TAG,true);
-//        LauncherUtils.clearPackage("com.baidu.appsearch");
-//        postedDelayExecute(2);
-//        Preferences.set(getBaseContext(), Constant.KEY_TASK_INIT_NOT_START, false);
-//        LauncherUtils.launchAPK1(ztApplication.getAppContext(), "com.baidu.appsearch");
+
+        Preferences.set(ztApplication.getAppContext(), Constant.KEY_ACCESSIBILITY_SERVICE_TAG, true);
+        super.onServiceConnected();
     }
 
     @Override
@@ -128,7 +133,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
     @Override
     public boolean onUnbind(Intent intent) {
         LogUtils.e("onUnbind");
-        Preferences.set(ztApplication.getAppContext(),Constant.KEY_ACCESSIBILITY_SERVICE_TAG,false);
+        Preferences.set(ztApplication.getAppContext(), Constant.KEY_ACCESSIBILITY_SERVICE_TAG, false);
         return super.onUnbind(intent);
     }
 
@@ -157,13 +162,19 @@ public class MyAccessibilityService extends BaseAccessibilityService {
             String cmd = "sleep 2;input touchscreen swipe 205 80 205 80 2000;sleep 1;input tap 275 80;";
             ShellUtils.execCommand(cmd, true);
             clipboard.setPrimaryClip(clip);
-        } else {
+        } else if (null != nodeInfo) {
             boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
             LogUtils.e("focus result: " + result);
             inputText(nodeInfo, getKeyWords());
             nodeInfo.recycle();
         }
-        mHandler.sendEmptyMessage(5);
+        if (isLongTailsWords()) {
+            mHandler.sendEmptyMessage(5);
+        } else {
+            LogUtils.e("没有长尾关键词");
+            isLoopFinish = true;
+            mHandler.sendEmptyMessage(3);
+        }
     }
 
     /**
@@ -172,26 +183,41 @@ public class MyAccessibilityService extends BaseAccessibilityService {
     private void stepFiveLongTailKeyWords() {
         LogUtils.e("收到长尾关键词任务 ");
         postedDelayExecute(5);
-        AccessibilityNodeInfo nodeInfo = findViewByID2("com.baidu.appsearch:id/search_result_search_textinput");
+        String[] longTails = getLongTailWords();
+        for (int i = 1; i < longTails.length; i++) {
+            execLongTails(longTails[i]);
+            if (longTails.length - 1 == i) {
+                isLoopFinish = true;
+            } else {
+                isLoopFinish = false;
+            }
+            stepThreeExecuteSearchTask();
+        }
+        return;
+    }
 
+    private void execLongTails(String tail) {
+        AccessibilityNodeInfo nodeInfo = findViewByID2("com.baidu.appsearch:id/search_result_search_textinput");
         if (nodeInfo == null) {
             LogUtils.e("nodeInfo  is null: 找不到输入焦点,继续执行 input text 输入");
-            String cmd = "input tap 205 80; sleep 2;input text" + getProductName();
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("tail", tail);
+            String cmd = "sleep 2;input tap 205 80; sleep 2;";
             ShellUtils.execCommand(cmd, true);
-            mHandler.sendEmptyMessage(3);
-            return;
-        } else {
+            clipboard.setPrimaryClip(clip);
+//            String cmd = " input tap 205 80; sleep 2; input text " + tail + ";";
+//            ShellUtils.execCommand(cmd, true);
+        } else if (nodeInfo != null) {
             boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
             LogUtils.e("focus result: " + result);
-            inputText(nodeInfo, getProductName());
+            inputText(nodeInfo, tail);
             nodeInfo.recycle();
-            mHandler.sendEmptyMessage(3);
-            return;
         }
+        return;
     }
 
     private void stepThreeExecuteSearchTask() {
-        postedDelayExecute(5);
+        postedDelayExecute(3);
         AccessibilityNodeInfo nodeInfo = findViewByID("com.baidu.appsearch:id/search_result_search");
         if (nodeInfo == null) {
             LogUtils.e("stepThreeExecuteSearchTask  nodeInfo  is null: ");
@@ -199,7 +225,8 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         }
         boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
         LogUtils.e("the click result: " + result);
-        if (result) {
+        if (result && isLoopFinish) {
+            isLoopFinish = false;
             nodeInfo.recycle();
             LogUtils.e("指令结束退出操作  ");
             postedDelayExecute(10);
