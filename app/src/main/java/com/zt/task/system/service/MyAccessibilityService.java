@@ -1,8 +1,6 @@
 package com.zt.task.system.service;
 
 import android.accessibilityservice.AccessibilityServiceInfo;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
@@ -21,6 +19,7 @@ import com.zt.task.system.ztApplication;
 
 
 /**
+ * @author
  * Created by Administrator on 2016/7/29.
  */
 public class MyAccessibilityService extends BaseAccessibilityService {
@@ -163,20 +162,16 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         postedDelayExecute(5);
         AccessibilityNodeInfo nodeInfo = findViewByID2("com.baidu.appsearch:id/search_result_search_textinput");
         if (nodeInfo == null) {
-//            String cmd = "input tap 205 80; sleep 2;input text " + tail + ";";
             String cmd = "sleep 2;input touchscreen swipe 205 80 205 80 2000;sleep 1;input tap 275 80; input text " + getKeyWords();
             ShellUtils.execCommand(cmd, true);
-//            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-//            ClipData clip = ClipData.newPlainText("label", getKeyWords());
-//            String cmd = "sleep 2;input touchscreen swipe 205 80 205 80 2000;sleep 1;input tap 275 80;";
-//            ShellUtils.execCommand(cmd, true);
-//            clipboard.setPrimaryClip(clip);
-        } else if (null != nodeInfo) {
+        } else {
             boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
             LogUtils.e("focus result: " + result);
             inputText(nodeInfo, getKeyWords());
             nodeInfo.recycle();
         }
+
+
         if (isLongTailsWords()) {
             mHandler.sendEmptyMessage(5);
         } else {
@@ -197,39 +192,20 @@ public class MyAccessibilityService extends BaseAccessibilityService {
             String words = longTails[i];
             LogUtils.e("words=" + words);
             execLongTails(words);
-            if (longTails.length - 1 == i) {
-                isLoopFinish = true;
-            } else {
-                isLoopFinish = false;
-            }
-            stepThreeExecuteSearchTask();
         }
+        stepThreeExecuteSearchTask();
         return;
     }
 
-    ClipboardManager clipboard;
-    ClipData clip;
-
     private void execLongTails(String tail) {
         postedDelayExecute(5);
-        AccessibilityNodeInfo nodeInfo = findViewByID("com.baidu.appsearch:id/search_result_search_textinput");
+        AccessibilityNodeInfo nodeInfo = findViewByID2("com.baidu.appsearch:id/search_result_search_textinput");
         if (nodeInfo == null) {
             LogUtils.e("nodeInfo  is null: 找不到输入焦点,继续执行 input text 输入：" + tail);
-//            clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-//            clip = ClipData.newPlainText(tail, tail);
-//            clipboard.setPrimaryClip(clip);
-//            CharSequence text = null;
-//            if (clip != null && clip.getItemCount() > 0) {
-//                LogUtils.e("itemCount:" + clip.getItemCount());
-//                text = clip.getItemAt(0).getText();
-//                LogUtils.e("CharSequence:" + text);
-//            }
-//            String cmd = " sleep 2;input touchscreen swipe 205 80 205 80 2000; input text " + tail;
-//            ShellUtils.execCommand(cmd, true);
-            String cmd = "sleep 2;input tap 205 80; sleep 2; input text " + tail;
+            String cmd = " sleep 2; input tap 205 80; sleep 2; input text " + tail;
             ShellUtils.execCommand(cmd, true);
         } else {
-            boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+            boolean result = nodeInfo.performAction(AccessibilityNodeInfo.FOCUS_INPUT);
             LogUtils.e("focus result: " + result);
             inputText(nodeInfo, tail);
             nodeInfo.recycle();
@@ -247,13 +223,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
         LogUtils.e("the click result: " + result);
         nodeInfo.recycle();
-        AccessibilityNodeInfo coverViewNode = findViewByID("com.baidu.appsearch:id/cover_view");
-        AccessibilityNodeInfo backArrowNode = findViewByID("com.baidu.appsearch:id/common_back_arrow");
-        LogUtils.e("backArrowNode=" + backArrowNode);
-        if (null != coverViewNode && null != backArrowNode) {
-            performBackClick();
-        }
-        if (result && isLoopFinish) {
+        if (result ){
             isLoopFinish = false;
             LogUtils.e("指令结束退出操作  ");
             postedDelayExecute(10);
