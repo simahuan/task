@@ -8,7 +8,9 @@ public final class ParcelableUtil {
     }
 
     public static byte[] marshal(Parcelable parcelable) {
-        if (parcelable  == null) return null;
+        if (parcelable == null) {
+            return null;
+        }
         Parcel parcel = Parcel.obtain();
         parcelable.writeToParcel(parcel, 0);
         byte[] bytes = parcel.marshall();
@@ -19,7 +21,8 @@ public final class ParcelableUtil {
     public static Parcel unmarshal(byte[] bytes) {
         Parcel parcel = Parcel.obtain();
         parcel.unmarshall(bytes, 0, bytes.length);
-        parcel.setDataPosition(0); // This is extremely important!
+        // This is extremely important!
+        parcel.setDataPosition(0);
         return parcel;
     }
 

@@ -10,28 +10,26 @@ import com.zt.task.system.util.LauncherUtils;
 import com.zt.task.system.util.LogUtils;
 import com.zt.task.system.util.Preferences;
 import com.zt.task.system.util.ShellUtils;
+import com.zt.task.system.util.TranslateToPackageName;
 import com.zt.task.system.ztApplication;
 
 import org.greenrobot.eventbus.EventBus;
 
 /**
- * An {@link IntentService} subclass for handling asynchronous task requests in
- * a service on a separate handler thread.
- * <p>
- * TODO: Customize class - update intent actions, extra parameters and static
- * helper methods.
+ * @author An {@link IntentService} subclass for handling asynchronous task requests in
+ *         a service on a separate handler thread.
+ *         <p>
+ *         helper methods.
  */
-public class MyIntentService extends IntentService {
-    private static final String TAG = MyIntentService.class.getSimpleName();
-    // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
-    private static final String ACTION_FOO = "com.example.administrator.accessibilityservicedemo.action.FOO";
-    private static final String ACTION_TASK = "action.task";
+public class TaskIntentService extends IntentService {
+    private static final String TAG = TaskIntentService.class.getSimpleName();
+    private static final String ACTION_REPORT_TASK = "action.report.task";
+    private static final String ACTION_LAUNCH_TASK = "action.launch_task";
 
-    private static final String EXTRA_TASK_COUNT = "extra_task_count";
-    private static final String EXTRA_TASK_TAG = "extra_task_tag";
+    private static final String EXTRA_APP_MARKET = "extra_app_market";
 
-    public MyIntentService() {
-        super("MyIntentService");
+    public TaskIntentService() {
+        super("TaskIntentService");
     }
 
     /**
@@ -40,11 +38,10 @@ public class MyIntentService extends IntentService {
      *
      * @see IntentService
      */
-    public static void startActionFoo(Context context, int taskCount, int taskTag) {
-        Intent intent = new Intent(context, MyIntentService.class);
-        intent.setAction(ACTION_FOO);
-        intent.putExtra(EXTRA_TASK_COUNT, taskCount);
-        intent.putExtra(EXTRA_TASK_TAG, taskTag);
+    public static void startActionReportTask(Context context, String appMarket) {
+        Intent intent = new Intent(context, TaskIntentService.class);
+        intent.setAction(ACTION_REPORT_TASK);
+        intent.putExtra(EXTRA_APP_MARKET, appMarket);
         context.startService(intent);
     }
 
@@ -54,36 +51,32 @@ public class MyIntentService extends IntentService {
      *
      * @see IntentService
      */
-    public static void startActionTask(Context context, int taskCount, int taskTag) {
-        Intent intent = new Intent(context, MyIntentService.class);
-        intent.setAction(ACTION_TASK);
-        intent.putExtra(EXTRA_TASK_COUNT, taskCount);
-        intent.putExtra(EXTRA_TASK_TAG, taskTag);
+    public static void startActionLaunchTask(Context context, String appMarket) {
+        Intent intent = new Intent(context, TaskIntentService.class);
+        intent.setAction(ACTION_LAUNCH_TASK);
+        intent.putExtra(EXTRA_APP_MARKET, appMarket);
         context.startService(intent);
     }
 
+    /**
+     * @param intent
+     */
     @Override
     protected void onHandleIntent(Intent intent) {
         if (intent != null) {
             final String action = intent.getAction();
-            if (ACTION_FOO.equals(action)) {
-                int taskCount = intent.getIntExtra(EXTRA_TASK_COUNT, -1);
-                int taskTag = intent.getIntExtra(EXTRA_TASK_TAG, -1);
-                handleActionFoo(taskCount, taskTag);
-            } else if (ACTION_TASK.equals(action)) {
-                int taskCount = intent.getIntExtra(EXTRA_TASK_COUNT, -1);
-                int taskTag = intent.getIntExtra(EXTRA_TASK_TAG, -1);
-                handleActionTask(taskCount, taskTag);
+            if (ACTION_REPORT_TASK.equals(action)) {
+                String appMarket = intent.getStringExtra(EXTRA_APP_MARKET);
+                handleActionReportTask(appMarket);
+            } else if (ACTION_LAUNCH_TASK.equals(action)) {
+                String appMarket = intent.getStringExtra(EXTRA_APP_MARKET);
+                handleActionLaunchTask(appMarket);
             }
         }
     }
 
-    /**
-     * Handle action Foo in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionFoo(int taskCount, int taskTag) {
-        reportTask(taskCount);
+    private void handleActionReportTask(String appMarket) {
+        reportTaskSchedule();
         int taskStatus = Preferences.getInt(this, Constant.KEY_TASK_STATUS);
 
         int largerCount = ztApplication.getInstance().getAmount();
@@ -94,20 +87,17 @@ public class MyIntentService extends IntentService {
         LogUtils.e("执行任务数量：" + executeCount);
 
         if (lastCount >= 1 && 1 == taskStatus) {
-            LauncherUtils.clearPackage("com.baidu.appsearch");
-            postedDelayExecute(2);
-            LauncherUtils.launchAPK3(this, "com.baidu.appsearch");
+            launchApk(appMarket);
             EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_EXECUTE));
         } else if (2 == taskStatus) {
             LogUtils.e("任务取消.");
             EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_CANCEL));
             Preferences.set(this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
         } else if (1 == taskStatus) {
-            Preferences.set(MyIntentService.this, Constant.KEY_TASK_STATUS, Constant.TASK_COMPLETED);
+            Preferences.set(TaskIntentService.this, Constant.KEY_TASK_STATUS, Constant.TASK_COMPLETED);
             EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_COMPLETED));
             LogUtils.e("任务全部完成...状态改变.");
         } else if (0 == taskStatus) {
-//            EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_ERROR));
             Preferences.set(this, Constant.KEY_TASK_ERROR, true);
             LogUtils.e("心跳0 处理空闲IDLE态，待接任务" + taskStatus + ";lastConut =" + lastCount);
         } else {
@@ -115,7 +105,19 @@ public class MyIntentService extends IntentService {
         }
     }
 
-    private void reportTask(int taskCount) {
+    /**
+     * 启动关注apk
+     *
+     * @param appMarket
+     */
+    private void launchApk(String appMarket) {
+        String packageName = TranslateToPackageName.translateToPackageName(appMarket);
+        LauncherUtils.clearPackage(packageName);
+        postedDelayExecute(2);
+        LauncherUtils.launchAPK3(this, packageName);
+    }
+
+    private void reportTaskSchedule() {
         int task_count = ztApplication.getInstance().getTaskCount();
         task_count++;
         ztApplication.getInstance().setTaskCount(task_count);
@@ -133,7 +135,7 @@ public class MyIntentService extends IntentService {
      * Handle action Baz in the provided background thread with the provided
      * parameters.
      */
-    private void handleActionTask(int taskCount, int taskTag) {
+    private void handleActionLaunchTask(String appMarket) {
         LogUtils.e("接到任务执行 Enabled  director");
         String cmd = "settings put secure enabled_accessibility_services com.zt.task.system/com.zt.task.system.service.MyAccessibilityService";
         ShellUtils.execCommand(cmd, true);
@@ -144,11 +146,6 @@ public class MyIntentService extends IntentService {
         ShellUtils.execCommand(cmd3, true);
         String cmd4 = "settings put secure accessibility_enabled  1";
         ShellUtils.execCommand(cmd4, true);
-//        postedDelayExecute(2);
-//        String cmd5 = "settings put secure enabled_accessibility_services com.zt.task.system/com.zt.task.system.service.MyAccessibilityService";
-//        ShellUtils.execCommand(cmd5, true);
-//        String cmd6 = "settings put secure accessibility_enabled  1";
-//        ShellUtils.execCommand(cmd6, true);
 
         boolean result = BaseAccessibilityService.getInstance().checkAccessibilityEnabled("com.zt.task.system/.service.MyAccessibilityService");
         LogUtils.e("AccessibilityService===result:" + result);
@@ -156,9 +153,7 @@ public class MyIntentService extends IntentService {
             Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, 0);
             Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, 0);
 
-            LauncherUtils.clearPackage("com.baidu.appsearch");
-            postedDelayExecute(2);
-            LauncherUtils.launchAPK1(ztApplication.getAppContext(), "com.baidu.appsearch");
+            launchApk(appMarket);
         } else {
             BaseAccessibilityService.getInstance().goAccess();
         }
@@ -168,4 +163,5 @@ public class MyIntentService extends IntentService {
         String cmd = "sleep " + second + ";";
         ShellUtils.execCommand(cmd, true);
     }
+
 }

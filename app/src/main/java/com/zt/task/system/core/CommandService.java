@@ -30,9 +30,9 @@ import com.zt.task.system.exception.ExceptionEngine;
 import com.zt.task.system.monitor.WifiConfig;
 import com.zt.task.system.monitor.WifiMonitor;
 import com.zt.task.system.okhttp.MyDataCallBack;
-import com.zt.task.system.okhttp.OkHTTPManger;
+import com.zt.task.system.okhttp.okHTTPManger;
 import com.zt.task.system.receiver.TickBroadcastReceiver;
-import com.zt.task.system.service.MyIntentService;
+import com.zt.task.system.service.TaskIntentService;
 import com.zt.task.system.util.Constant;
 import com.zt.task.system.util.DeviceInfoUtils;
 import com.zt.task.system.util.GsonUtil;
@@ -190,7 +190,7 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
     }
 
     private void getTaskInfos(String url, String token) {
-        OkHTTPManger.getInstance().getAsynBackStringWithoutParms(url, token, new MyDataCallBack() {
+        okHTTPManger.getInstance().getAsynBackStringWithoutParms(url, token, new MyDataCallBack() {
             @Override
             public void requestSuccess(Object result) {
                 LogUtils.e("OkHTTPManger-----requestSuccess");
@@ -228,18 +228,16 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
                     JSONObject object = new JSONObject(text);
                     Command cmd = Command.parse(object);
                     Preferences.set(getBaseContext(), Constant.KEY_COMMAND_BEAN, cmd);
-
                     if (!TextUtils.isEmpty(cmd.getTokens())
                             && !TextUtils.isEmpty(cmd.getUrl())
-                            && cmd.getStatus() == 1
-                            ) {
-                        Preferences.set(getBaseContext(), Constant.KEY_TASK_INIT_NOT_START, true);//任务刚接到
-                        sendMessageToRouter(getHeartBeatOne());//
-                        Preferences.set(getBaseContext(), Constant.KEY_TASK_STATUS, Constant.TASK_EXECUTE);//任务刚接到
+                            && cmd.getStatus() == 1) {
+                        Preferences.set(getBaseContext(), Constant.KEY_TASK_INIT_NOT_START, true);
+                        sendMessageToRouter(getHeartBeatOne());
+                        //任务刚接到
+                        Preferences.set(getBaseContext(), Constant.KEY_TASK_STATUS, Constant.TASK_EXECUTE);
 
                         getTaskInfos(cmd.getUrl(), cmd.getTokens());
                         Preferences.set(getBaseContext(), Constant.KEY_TASK_CREATE_TIME, System.currentTimeMillis());
-
                     } else if (!TextUtils.isEmpty(cmd.getTokens())
                             && !TextUtils.isEmpty(cmd.getUrl())
                             && cmd.getStatus() == 2) {
@@ -263,7 +261,6 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
         @Override
         public void onReconnect() {
             super.onReconnect();
-
             LogUtils.e("wsStatusListener----onReconnect--------------url------" + formatWebSocket());
         }
 
@@ -352,10 +349,15 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
                     int taskStatus = Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS);
                     LogUtils.e("当前任务状态 taskStatus=" + taskStatus);
                     if (wsManager.isWsConnected()) {
-                        sendMessageToRouter(taskStatus == 0 ? heartbeat_zero : taskStatus == 1 ? heartbeat_one : taskStatus == 2 ? heartbeat_two : heartbeat_three);
+                        sendMessageToRouter(taskStatus == 0 ? heartbeat_zero
+                                : taskStatus == 1 ? heartbeat_one
+                                : taskStatus == 2 ? heartbeat_two
+                                : heartbeat_three);
                     } else {
                         LogUtils.e("wsUnConnected......websocket未连接.......");
                     }
+                    break;
+                default:
                     break;
             }
             return false;
@@ -393,6 +395,7 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
     private void initHeartBeat() {
         mTimer.schedule(mTimerTask, 1000, 10 * 1000);
     }
+
 
     private void stopHeartBeat() {
         if (mTimer != null) {
@@ -451,23 +454,27 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
                 Preferences.set(getBaseContext(), Constant.KEY_TASK_TYPE, task.getType());
                 ztApplication.getInstance().setTask(task);
                 Preferences.set(getBaseContext(), Constant.KEY_TASK_INIT_NOT_START, false);
-                executeTask();
+                executeTask(task);
             }
         } catch (JSONException e) {
             e.printStackTrace();
-            LogUtils.e("发生异常TASK_BEAN=", ExceptionEngine.catchException(e).getMsg());
+            LogUtils.e("Exception TASK_BEAN=", ExceptionEngine.catchException(e).getMsg());
             mHandler.sendEmptyMessage(200);
         } catch (Exception e) {
             e.printStackTrace();
-            LogUtils.e("发生异常Exception=", ExceptionEngine.catchException(e).getMsg());
+            LogUtils.e("Exception=", ExceptionEngine.catchException(e).getMsg());
         }
     }
 
-    private void executeTask() {
+    /**
+     * 到指定市场执行 特定类型任务
+     */
+    private void executeTask(Task task) {
         if (Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS) == 1) {
-            MyIntentService.startActionTask(this, 1, 0);
+            TaskIntentService.startActionLaunchTask(this, task.getAppMarket());
         } else {
-            LogUtils.e("其它类型任务状态 不执行任务 TaskStatus = ", Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS));
+            LogUtils.e("其它类型任务状态 不执行任务 TaskStatus = ",
+                    Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS));
         }
     }
 

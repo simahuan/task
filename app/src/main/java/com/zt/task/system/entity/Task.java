@@ -12,7 +12,9 @@ public class Task implements Parcelable {
 
     public static ArrayList<Task> parse(JSONArray array) {
         ArrayList<Task> items = new ArrayList<>();
-        if (array == null) return items;
+        if (array == null) {
+            return items;
+        }
         for (int i = 0; i < array.length(); ++i) {
             JSONObject j = array.optJSONObject(i);
             Builder b = Task.newBuilder()
