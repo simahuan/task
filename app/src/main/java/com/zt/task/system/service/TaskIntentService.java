@@ -137,22 +137,26 @@ public class TaskIntentService extends IntentService {
      */
     private void handleActionLaunchTask(String appMarket) {
         LogUtils.e("接到任务执行 Enabled  director");
-        String cmd = "settings put secure enabled_accessibility_services com.zt.task.system/com.zt.task.system.service.MyAccessibilityService";
+        String command = "settings put secure enabled_accessibility_services com.zt.task.system/com.zt.task.system.service.%s";
+        String cmd = String.format(command, "MyAccessibilityService");
+        LogUtils.e("cmd:" + cmd);
+//        String cmd = "settings put secure enabled_accessibility_services com.zt.task.system/com.zt.task.system.service.MyAccessibilityService";
         ShellUtils.execCommand(cmd, true);
         String cmd2 = "settings put secure accessibility_enabled  1";
         ShellUtils.execCommand(cmd2, true);
         postedDelayExecute(2);
-        String cmd3 = "settings put secure enabled_accessibility_services com.zt.task.system/com.zt.task.system.service.MyAccessibilityService";
-        ShellUtils.execCommand(cmd3, true);
+//        String cmd3 = "settings put secure enabled_accessibility_services com.zt.task.system/com.zt.task.system.service.MyAccessibilityService";
+        ShellUtils.execCommand(cmd, true);
         String cmd4 = "settings put secure accessibility_enabled  1";
         ShellUtils.execCommand(cmd4, true);
 
-        boolean result = BaseAccessibilityService.getInstance().checkAccessibilityEnabled("com.zt.task.system/.service.MyAccessibilityService");
+        String enableAccessService = String.format("com.zt.task.system/.service.%s", "MyAccessibilityService");
+        LogUtils.e("enableAccessService:" + enableAccessService);
+        boolean result = BaseAccessibilityService.getInstance().checkAccessibilityEnabled(enableAccessService);
         LogUtils.e("AccessibilityService===result:" + result);
         if (result || Preferences.getBoolean(ztApplication.getAppContext(), Constant.KEY_ACCESSIBILITY_SERVICE_TAG)) {
             Preferences.set(this, Constant.KEY_TASK_SPENT_TIME, 0);
             Preferences.set(this, Constant.KEY_TASK_EXECUTE_STATISTICAL, 0);
-
             launchApk(appMarket);
         } else {
             BaseAccessibilityService.getInstance().goAccess();

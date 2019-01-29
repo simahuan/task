@@ -24,6 +24,9 @@ import com.zt.task.system.util.ShellUtils;
 
 import java.util.List;
 
+/**
+ * @author
+ */
 public class BaseAccessibilityService extends AccessibilityService {
 
     private AccessibilityManager mAccessibilityManager;
@@ -49,10 +52,10 @@ public class BaseAccessibilityService extends AccessibilityService {
     }
 
 
-    protected static String getKeyWords() {
+    protected  String getKeyWords() {
         String regex = ",|，|\\s+";
         String words = getTask().getKeyWords();
-        String key = words; //交付所有词条
+        String key = words;
         if (!TextUtils.isEmpty(words)) {
             String[] arr = words.split(regex);
             key = arr[0];

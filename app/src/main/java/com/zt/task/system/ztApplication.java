@@ -10,6 +10,7 @@ import com.orhanobut.logger.DiskLogAdapter;
 import com.orhanobut.logger.FormatStrategy;
 import com.orhanobut.logger.Logger;
 import com.orhanobut.logger.PrettyFormatStrategy;
+import com.tencent.bugly.crashreport.CrashReport;
 import com.zt.task.system.entity.Task;
 import com.zt.task.system.service.BaseAccessibilityService;
 import com.zt.task.system.util.Constant;
@@ -47,7 +48,7 @@ public class ztApplication extends Application {
     }
 
     private void initTask() {
-//        CrashReport.initCrashReport(getApplicationContext(), "cd4ba6552d", false);
+        CrashReport.initCrashReport(getApplicationContext(), "cd4ba6552d", false);
         mActivityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         BaseAccessibilityService.getInstance().init(this);
         Preferences.set(ztApplication.getAppContext(),Constant.KEY_ACCESSIBILITY_SERVICE_TAG,false);
