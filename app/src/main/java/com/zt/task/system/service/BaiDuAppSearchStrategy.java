@@ -178,16 +178,15 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
         }
         LogUtils.e("开始进入 完成");
         baseAccessService.postedDelayExecute(5);
-        LogUtils.e("rootNode=" + rootNode);
-        List<AccessibilityNodeInfo> finishButtons = rootNode.findAccessibilityNodeInfosByText("完成");
-        List<AccessibilityNodeInfo> doneButtons = rootNode.findAccessibilityNodeInfosByViewId("com.android.packageinstaller:id/done_button");
+        List<AccessibilityNodeInfo> finishButtons = baseAccessService.getRootInActiveWindow().findAccessibilityNodeInfosByText("完成");
         if (null != finishButtons && !finishButtons.isEmpty()) {
-            AccessibilityNodeInfo node = finishButtons.get(0);
-            if (null != node) {
-                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            for (AccessibilityNodeInfo finishBtn : finishButtons) {
+                if ("完成".equals(finishBtn.getText())) {
+                    finishBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                }
             }
         }
-        LogUtils.e("完成安装流程，返回桌面");
+        LogUtils.e("完成安装流程，返回桌面,上报数据");
         baseAccessService.postedDelayExecute(5);
         installHome = false;
         baseAccessService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
