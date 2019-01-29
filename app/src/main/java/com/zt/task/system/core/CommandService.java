@@ -288,16 +288,6 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
         }
     };
 
-    private void printExceptionLog(Response response) {
-        try {
-            LogUtils.e("wsStatusListener-----onOpen======" + response.body().string());
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(ExceptionEngine.catchException(e).getMsg());
-        }
-    }
-
-
     /**
      * 清空上报数据
      */

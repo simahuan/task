@@ -1,5 +1,6 @@
 package com.zt.task.system.service;
 
+import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
@@ -110,10 +111,86 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
             case TYPE_COMMENT:
                 LogUtils.e("执行评论");
                 break;
+            case TYPE_INSTALL:
+                LogUtils.e("启动应用安装监听.....");
+                installApk();
+                break;
             default:
                 LogUtils.e("执行 default  策略");
                 break;
         }
+    }
+
+    private boolean installHome = false;
+
+    private void installApk() {
+        AccessibilityNodeInfo rootNode = baseAccessService.getRootInActiveWindow();
+        if (null == rootNode) {
+            return;
+        }
+        List<AccessibilityNodeInfo> nodeInfos = rootNode.findAccessibilityNodeInfosByText("金道贵金属");
+        if (null == nodeInfos && nodeInfos.isEmpty()) {
+            LogUtils.e("金道贵金属,未到此页面");
+            return;
+        }
+        for (AccessibilityNodeInfo n : nodeInfos) {
+            CharSequence resourceName = n.getPackageName();
+            CharSequence className = n.getClassName();
+            if (null != n && "com.android.packageinstaller".equals(resourceName)
+                    && "android.widget.TextView".equals(className)) {
+                installHome = true;
+            }
+        }
+
+        if (!installHome) {
+            return;
+        }
+
+        LogUtils.e("开始进入下一步");
+        List<AccessibilityNodeInfo> okButtons = rootNode.findAccessibilityNodeInfosByText("下一步");
+        if (null != okButtons && !okButtons.isEmpty()) {
+            AccessibilityNodeInfo node = okButtons.get(0);
+            if (null != node) {
+                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+        }
+        LogUtils.e("开始进入 安装");
+        baseAccessService.postedDelayExecute(5);
+        List<AccessibilityNodeInfo> installButtons = rootNode.findAccessibilityNodeInfosByText("安装");
+        if (null != installButtons && !installButtons.isEmpty()) {
+            for (AccessibilityNodeInfo installBtn : installButtons) {
+                if ("安装".equals(installBtn.getText())) {
+                    installBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                }
+            }
+        }
+
+        baseAccessService.postedDelayExecute(15);
+        List<AccessibilityNodeInfo> installing = rootNode.findAccessibilityNodeInfosByText("正在安装...");
+        if (null != installing && !installing.isEmpty()) {
+            LogUtils.e("继续待待安装10s");
+            baseAccessService.postedDelayExecute(10);
+        }
+
+        List<AccessibilityNodeInfo> installed = rootNode.findAccessibilityNodeInfosByText("应用安装完成。");
+        if (null != installed && !installed.isEmpty()) {
+            LogUtils.e("Apk安装已经完成");
+        }
+        LogUtils.e("开始进入 完成");
+        baseAccessService.postedDelayExecute(5);
+        LogUtils.e("rootNode=" + rootNode);
+        List<AccessibilityNodeInfo> finishButtons = rootNode.findAccessibilityNodeInfosByText("完成");
+        List<AccessibilityNodeInfo> doneButtons = rootNode.findAccessibilityNodeInfosByViewId("com.android.packageinstaller:id/done_button");
+        if (null != finishButtons && !finishButtons.isEmpty()) {
+            AccessibilityNodeInfo node = finishButtons.get(0);
+            if (null != node) {
+                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+        }
+        LogUtils.e("完成安装流程，返回桌面");
+        baseAccessService.postedDelayExecute(5);
+        installHome = false;
+        baseAccessService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
     }
 
     /**
@@ -126,7 +203,6 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
             brushWordHandler.sendEmptyMessage(ExecuteStep.STEP_ONE_FIND_SEARCH_BOX);
         }
     }
-
 
     /**
      * app 下载入口
@@ -162,6 +238,7 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
 
         //----
 //        baseAccessService.postedDelayExecute(3);
+        LogUtils.e("收到第三步任务,执行点击搜索产品名称 ");
         nodeInfo = baseAccessService.findViewByID("com.baidu.appsearch:id/search_result_search");
         if (nodeInfo == null) {
             LogUtils.e("stepThreeExecuteSearchTask  nodeInfo  is null: ");
@@ -170,29 +247,21 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
         boolean result = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
         LogUtils.e("the click result: " + result);
         nodeInfo.recycle();
-        baseAccessService.postedDelayExecute(10);
+        LogUtils.e("搜索 结果等待 时间 ");
+        baseAccessService.postedDelayExecute(20);
 
         //-------download
-        //       baseAccessService.postedDelayExecute(5);
-
-        if (nodeInfo.getText() != null && nodeInfo.getText().toString().contains("金道贵金属")) {
-            if ("金道贵金属".equals(nodeInfo.getText().toString()) && "android.widget.TextView".equals(nodeInfo.getClassName())) {
-                AccessibilityNodeInfo parent = nodeInfo;
-                while (parent != null) {
-                    if (parent.isClickable()) {
-                        parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                        break;
-                    }
-                    parent = parent.getParent();
-                }
-            }
-        }
-
         AccessibilityNodeInfo rootNode = baseAccessService.getRootInActiveWindow();
         if (null == rootNode) {
             return;
         }
+        List<AccessibilityNodeInfo> loadingNodes = rootNode.findAccessibilityNodeInfosByViewId("com.baidu.appsearch:id/loading_imageView");
+        if (null != loadingNodes && !loadingNodes.isEmpty()) {
+            LogUtils.e("搜索 结果 转圈 继续等待 20s ");
+            baseAccessService.postedDelayExecute(20);
+        }
 
+        LogUtils.e("收到第四步任务,执行下载产品名称 ");
         findAndClickDownloadProduce(rootNode);
 
         if (!isFirstScreenProduceName) {

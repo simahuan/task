@@ -12,6 +12,8 @@ import com.zt.task.system.util.Preferences;
 import com.zt.task.system.util.ToastUtil;
 import com.zt.task.system.ztApplication;
 
+import org.greenrobot.eventbus.EventBus;
+
 
 /**
  * @author Created by Administrator on 2016/7/29.
@@ -30,13 +32,17 @@ public class MyAccessibilityService extends BaseAccessibilityService {
          * 应用评论
          */
         String TYPE_COMMENT = "评论";
+
+        /**
+         * 安装 apk
+         */
+        String TYPE_INSTALL = "安装";
     }
-
-
 
 
     ExecuteStrategy mExecuteStrategy;
     AccessibilityEvent accessibilityEvent;
+
     public void setStrategy(ExecuteStrategy pStrategy) {
         this.mExecuteStrategy = pStrategy;
     }
@@ -48,8 +54,11 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         }
         int eventType = accessibilityEvent.getEventType();
         this.accessibilityEvent = accessibilityEvent;
-        LogUtils.e("eventType:"+eventType);
+        LogUtils.e("eventType:" + eventType);
         switch (eventType) {
+            case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
+                LogUtils.e("TYPE_WINDOW_CONTENT_CHANGED");
+                break;
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
                 LogUtils.e("TYPE_WINDOW_STATE_CHANGED");
                 // 任务正在执行中，空闲 两种状态监听
@@ -57,6 +66,11 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                 break;
             case AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED:
                 LogUtils.e("TYPE_NOTIFICATION_STATE_CHANGED");
+                if (null != mExecuteStrategy){
+                    mExecuteStrategy.executeType(ExecuteStrategy.TYPE_INSTALL);
+                }
+            case AccessibilityEvent.TYPE_WINDOWS_CHANGED:
+                LogUtils.e("TYPE_WINDOWS_CHANGED");
                 break;
             default:
                 break;
@@ -93,7 +107,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                 ToastUtil.showShort(mContext, "刷词以外其它类型任务开发中..");
             }
         } else {
-            LogUtils.e("获取任务类型失败");
+            LogUtils.e("获取任务类型失败：isLaunchHome=" + isAppLaunchHome(accessibilityEvent));
             ToastUtil.showShort(mContext, "获取任务类型失败");
         }
     }
@@ -106,6 +120,14 @@ public class MyAccessibilityService extends BaseAccessibilityService {
      */
     private boolean isAppLaunchHome(AccessibilityEvent accessibilityEvent) {
         return "com.baidu.appsearch.MainActivity".equals(accessibilityEvent.getClassName());
+    }
+
+    public void registerEventBus() {
+        EventBus.getDefault().register(this);
+    }
+
+    public void unregisterEventBus() {
+        EventBus.getDefault().unregister(this);
     }
 
     @Override

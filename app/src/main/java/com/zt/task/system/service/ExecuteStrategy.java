@@ -19,6 +19,11 @@ public interface ExecuteStrategy {
     int TYPE_COMMENT = 0x3;
 
     /**
+     * 应用安装
+     */
+    int TYPE_INSTALL = 0x4;
+
+    /**
      * 执行类型
      * @param type
      */
