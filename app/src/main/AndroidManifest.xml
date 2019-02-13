@@ -16,13 +16,6 @@
     <!-- setting数据库 -->
     <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
 
-    <!-- 屏保互动 -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-    <uses-permission android:name="android.permission.GET_TASKS"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.WRITE_DREAM_STATE"/>
-    <uses-permission android:name="android.permission.READ_DREAM_STATE"/>
-    <uses-permission android:name="com.google.android.gallery3d.permission.PICASA_STORE"/>
 
     <application
         android:name=".ztApplication"

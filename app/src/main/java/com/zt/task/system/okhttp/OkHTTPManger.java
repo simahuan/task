@@ -28,9 +28,9 @@ import okhttp3.Response;
 /**
  * @author
  */
-public class okHTTPManger {
+public class OkHTTPManger {
     private static OkHttpClient okHttpClient;
-    private volatile static okHTTPManger instance;
+    private volatile static OkHTTPManger instance;
     //提交json数据
     private static final MediaType JSON = MediaType.parse("application/json;charset=utf-8");
     //提交字符串数据
@@ -43,7 +43,7 @@ public class okHTTPManger {
     private static File cacheFile;
     private static Cache cache;
 
-    public okHTTPManger() {
+    public OkHTTPManger() {
         //        if (APP.getInstance().getApplicationContext().getCacheDir()!=null){
         //            cacheFile = new File(APP.getInstance().getCacheDir(), "Test");
         //            cache = new Cache(cacheFile, 1024 * 1024 * 10);
@@ -78,11 +78,11 @@ public class okHTTPManger {
      *
      * @return
      */
-    public static okHTTPManger getInstance() {
+    public static OkHTTPManger getInstance() {
         if (instance == null) {
-            synchronized (okHTTPManger.class) {
+            synchronized (OkHTTPManger.class) {
                 if (instance == null) {
-                    instance = new okHTTPManger();
+                    instance = new OkHTTPManger();
                 }
             }
         }

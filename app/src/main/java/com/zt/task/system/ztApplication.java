@@ -109,7 +109,7 @@ public class ztApplication extends Application {
      * @param pTask_count
      */
     public void setTaskCount(int pTask_count) {
-        this.task_count = pTask_count;
+        task_count = pTask_count;
     }
 
     public void setTask(Task pTask) {

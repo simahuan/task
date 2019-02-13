@@ -2,10 +2,8 @@ package com.zt.task.system.core;
 
 import android.app.ActivityManager;
 import android.app.Service;
-import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -17,7 +15,6 @@ import android.text.format.DateUtils;
 import android.text.style.ForegroundColorSpan;
 import android.widget.Toast;
 
-import com.android.settings.vpn2.AidlVpnSettingsServer;
 import com.zt.task.system.BuildConfig;
 import com.zt.task.system.R;
 import com.zt.task.system.entity.Command;
@@ -27,10 +24,8 @@ import com.zt.task.system.entity.HeartBeatZero;
 import com.zt.task.system.entity.MessageEvent;
 import com.zt.task.system.entity.Task;
 import com.zt.task.system.exception.ExceptionEngine;
-import com.zt.task.system.monitor.WifiConfig;
-import com.zt.task.system.monitor.WifiMonitor;
 import com.zt.task.system.okhttp.MyDataCallBack;
-import com.zt.task.system.okhttp.okHTTPManger;
+import com.zt.task.system.okhttp.OkHTTPManger;
 import com.zt.task.system.receiver.TickBroadcastReceiver;
 import com.zt.task.system.service.TaskIntentService;
 import com.zt.task.system.util.Constant;
@@ -63,7 +58,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okio.ByteString;
 
-public class CommandService extends Service implements WifiMonitor.WifiStateCallback {
+public class CommandService extends Service {
     private final static String TAG = "CommandService";
     private WsManager wsManager;
 
@@ -74,32 +69,6 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
     //  服务重启，任务标记位清0
     private TickBroadcastReceiver mTickBroadcastReceiver;
 
-    private AidlVpnSettingsServer mAidlVpnSettingsServer;
-
-    private ServiceConnection mServiceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            mAidlVpnSettingsServer = AidlVpnSettingsServer.Stub.asInterface(service);
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-
-        }
-    };
-
-
-    @Override
-    public void onConnected(WifiConfig config) {
-        ToastUtil.show(this, "onConnected", Toast.LENGTH_SHORT);
-        LogUtils.e("网络连接");
-    }
-
-    @Override
-    public void onDisconnected(WifiConfig config) {
-        ToastUtil.show(this, "onDisconnected", Toast.LENGTH_SHORT);
-        LogUtils.e("网络断开");
-    }
 
     @Override
     public void onCreate() {
@@ -111,9 +80,6 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
         initHeartBeat();
         initTickBootReceiver();
 //        registerTickBootReceiver();
-
-        WifiMonitor.getInstance().startMonitor(this);
-        WifiMonitor.getInstance().registerObserver(this);
     }
 
     @Override
@@ -190,7 +156,7 @@ public class CommandService extends Service implements WifiMonitor.WifiStateCall
     }
 
     private void getTaskInfos(String url, String token) {
-        okHTTPManger.getInstance().getAsynBackStringWithoutParms(url, token, new MyDataCallBack() {
+        OkHTTPManger.getInstance().getAsynBackStringWithoutParms(url, token, new MyDataCallBack() {
             @Override
             public void requestSuccess(Object result) {
                 LogUtils.e("OkHTTPManger-----requestSuccess");
