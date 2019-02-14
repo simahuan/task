@@ -28,13 +28,13 @@ android {
 
         DailyTest {
             versionName "1.0.0118"
-            buildConfigField 'String', 'WS', '"ws://192.168.1.191:2345/?uid=%1$s"'
+            buildConfigField 'String', 'WS', '"ws://192.168.1.195:2345/?uid=%1$s"'
             return void
         }
 
         Product {
             versionName "1.0.0rc1"
-            buildConfigField 'String', 'WS', '"ws://192.168.1.191:2345/?uid=%1$s"'
+            buildConfigField 'String', 'WS', '"ws://192.168.1.195:2345/?uid=%1$s"'
             return void
         }
         return void
