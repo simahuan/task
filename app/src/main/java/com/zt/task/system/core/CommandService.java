@@ -2,8 +2,12 @@ package com.zt.task.system.core;
 
 import android.app.ActivityManager;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -15,8 +19,10 @@ import android.text.format.DateUtils;
 import android.text.style.ForegroundColorSpan;
 import android.widget.Toast;
 
+import com.zt.captcha.vpnlibrary.monitor.VpnService;
+import com.zt.captcha.vpnlibrary.monitor.VpnServiceMonitor;
+import com.zt.captcha.vpnlibrary.utils.Action;
 import com.zt.task.system.BuildConfig;
-import com.zt.task.system.R;
 import com.zt.task.system.entity.Command;
 import com.zt.task.system.entity.HeartBeatThree;
 import com.zt.task.system.entity.HeartBeatTwo;
@@ -33,6 +39,7 @@ import com.zt.task.system.util.DeviceInfoUtils;
 import com.zt.task.system.util.GsonUtil;
 import com.zt.task.system.util.LogUtils;
 import com.zt.task.system.util.Preferences;
+import com.zt.task.system.util.ShellUtils;
 import com.zt.task.system.util.Spanny;
 import com.zt.task.system.util.ToastUtil;
 import com.zt.task.system.websocket.WsManager;
@@ -58,7 +65,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okio.ByteString;
 
-public class CommandService extends Service {
+public class CommandService extends Service implements VpnServiceMonitor.VpnStateCallback {
     private final static String TAG = "CommandService";
     private WsManager wsManager;
 
@@ -69,6 +76,59 @@ public class CommandService extends Service {
     //  服务重启，任务标记位清0
     private TickBroadcastReceiver mTickBroadcastReceiver;
 
+    private BroadcastReceiver vpnServerReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            binder.startConnectVpnServer(null);
+        }
+    };
+
+
+    VpnService.MyBinder binder = null;
+    ServiceConnection conn = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            binder = (VpnService.MyBinder) service;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            binder = null;
+        }
+    };
+
+
+    @Override
+    public void onVpnConnected() {
+        LogUtils.e("CommandService vpn connected");
+        initWebSocketConnect();
+        initHeartBeat();
+    }
+
+    @Override
+    public void onVpnDisconnected() {
+        LogUtils.e("CommandService vpn disconnected");
+    }
+
+
+    private void initVpnService() {
+        bindVpnService();
+        VpnServiceMonitor.getInstance().registerObserver(this);
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Action.AIDL_VPN_SERVER_CONNECTED);
+        registerReceiver(vpnServerReceiver, filter);
+    }
+
+    private void bindVpnService() {
+        Intent lIntent = new Intent(this, VpnService.class);
+        this.bindService(lIntent, conn, Context.BIND_AUTO_CREATE);
+    }
+
+    private void unbindVpnService() {
+        binder.stopVpnServer();
+        unbindService(conn);
+    }
 
     @Override
     public void onCreate() {
@@ -76,8 +136,8 @@ public class CommandService extends Service {
         LogUtils.e("CommandService---onCreate---- 服务调用");
         registerEventBus();
         clearReportZero();
-        initWebSocketConnect();
-        initHeartBeat();
+        initVpnService();
+
         initTickBootReceiver();
 //        registerTickBootReceiver();
     }
@@ -89,22 +149,12 @@ public class CommandService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-//    @Nullable
-//    @Override
-//    public IBinder onBind(Intent intent) {
-//        return null;
-//    }
-//
-//    @Override
-//    public boolean onUnbind(Intent intent) {
-//        return super.onUnbind(intent);
-//    }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
         LogUtils.e("ComanndeService   onDestrory......");
 //        stopWebSocketConnect();
+        unbindVpnService();
         unregisterEventBus();
         stopHeartBeat();
     }
@@ -177,16 +227,13 @@ public class CommandService extends Service {
         public void onOpen(Response response) {
             super.onOpen(response);
             LogUtils.e("wsStatusListener-----onOpen======");
-            LogUtils.e(Spanny.spanText("服务器连接成功\n\n", new ForegroundColorSpan(
-                    ContextCompat.getColor(getBaseContext(), R.color.colorPrimary))).toString());
+            LogUtils.e("服务器连接成功");
 //            clearReportZero();
         }
 
         @Override
         public void onMessage(String text) {
             LogUtils.d("wsStatusListener-----onMessage");
-            LogUtils.e(Spanny.spanText("服务器 " + DateUtils.formatDateTime(getBaseContext(), System.currentTimeMillis(),
-                    DateUtils.FORMAT_SHOW_TIME) + "\n", new ForegroundColorSpan(ContextCompat.getColor(getBaseContext(), R.color.colorPrimary))).toString());
             LogUtils.d(fromHtmlText("服务器任务:" + text) + "\n\n");
 
             if (!TextUtils.isEmpty(text)) {
@@ -303,7 +350,7 @@ public class CommandService extends Service {
                     heartbeat_three = GsonUtil.createGsonString(new HeartBeatThree(CommandService.this, 3));
 
                     int taskStatus = Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS);
-                    LogUtils.e("当前任务状态 taskStatus=" + taskStatus);
+//                    LogUtils.e("当前任务状态 taskStatus=" + taskStatus);
                     if (wsManager.isWsConnected()) {
                         sendMessageToRouter(taskStatus == 0 ? heartbeat_zero
                                 : taskStatus == 1 ? heartbeat_one
@@ -429,7 +476,7 @@ public class CommandService extends Service {
         if (Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS) == 1) {
             TaskIntentService.startActionLaunchTask(this, task.getAppMarket());
         } else {
-            LogUtils.e("其它类型任务状态 不执行任务 TaskStatus = ",
+            LogUtils.e("其它类型任务状态 不执行任务 TaskStatus = " +
                     Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS));
         }
     }
@@ -444,5 +491,8 @@ public class CommandService extends Service {
         return result;
     }
 
-
+    public void postedDelayExecute(long second) {
+        String cmd = "sleep  " + second + ";";
+        ShellUtils.execCommand(cmd, true);
+    }
 }

@@ -24,7 +24,7 @@ import org.greenrobot.eventbus.EventBus;
 public class TaskIntentService extends IntentService {
     private static final String TAG = TaskIntentService.class.getSimpleName();
     private static final String ACTION_REPORT_TASK = "action.report.task";
-    private static final String ACTION_LAUNCH_TASK = "action.launch_task";
+    private static final String ACTION_LAUNCH_TASK = "action.launch.task";
 
     private static final String EXTRA_APP_MARKET = "extra_app_market";
 
@@ -87,6 +87,7 @@ public class TaskIntentService extends IntentService {
         LogUtils.e("执行任务数量：" + executeCount);
 
         if (lastCount >= 1 && 1 == taskStatus) {
+            // 跳转哪个市场执行任务
             launchApk(appMarket);
             EventBus.getDefault().post(new MessageEvent("task_status", Constant.TASK_EXECUTE));
         } else if (2 == taskStatus) {
@@ -117,6 +118,9 @@ public class TaskIntentService extends IntentService {
         LauncherUtils.launchAPK3(this, packageName);
     }
 
+    /**
+     * set  task_count , second
+     */
     private void reportTaskSchedule() {
         int task_count = ztApplication.getInstance().getTaskCount();
         task_count++;

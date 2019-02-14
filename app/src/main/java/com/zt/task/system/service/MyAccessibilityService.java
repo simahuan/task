@@ -54,7 +54,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         }
         int eventType = accessibilityEvent.getEventType();
         this.accessibilityEvent = accessibilityEvent;
-        LogUtils.e("eventType:" + eventType);
+        LogUtils.e("eventType:" + Integer.toHexString(eventType));
         switch (eventType) {
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
                 LogUtils.e("TYPE_WINDOW_CONTENT_CHANGED");
@@ -66,8 +66,16 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                 break;
             case AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED:
                 LogUtils.e("TYPE_NOTIFICATION_STATE_CHANGED");
-                if (null != mExecuteStrategy){
-                    mExecuteStrategy.executeType(ExecuteStrategy.TYPE_INSTALL);
+                if (null != mExecuteStrategy ) {
+                    app = ztApplication.getInstance();
+                    if (null != app && null != app.getTask()) {
+                        type = app.getTaskType();
+                    } else {
+                        type = Preferences.getString(mContext, Constant.KEY_TASK_TYPE);
+                    }
+                    if("下载".equals(type)){
+                        mExecuteStrategy.executeType(ExecuteStrategy.TYPE_INSTALL);
+                    }
                 }
             case AccessibilityEvent.TYPE_WINDOWS_CHANGED:
                 LogUtils.e("TYPE_WINDOWS_CHANGED");
@@ -107,8 +115,8 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                 ToastUtil.showShort(mContext, "刷词以外其它类型任务开发中..");
             }
         } else {
-            LogUtils.e("获取任务类型失败：isLaunchHome=" + isAppLaunchHome(accessibilityEvent));
-            ToastUtil.showShort(mContext, "获取任务类型失败");
+            LogUtils.e("任务不执行：isLaunchHome=" + isAppLaunchHome(accessibilityEvent) + ",type=" + type);
+            ToastUtil.showShort(mContext, "任务不执行");
         }
     }
 

@@ -236,7 +236,7 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
         }
 
         //----
-//        baseAccessService.postedDelayExecute(3);
+        //        baseAccessService.postedDelayExecute(3);
         LogUtils.e("收到第三步任务,执行点击搜索产品名称 ");
         nodeInfo = baseAccessService.findViewByID("com.baidu.appsearch:id/search_result_search");
         if (nodeInfo == null) {
@@ -388,7 +388,7 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
             String cmd = " sleep 2; input tap 205 80; sleep 2; input text " + tail;
             ShellUtils.execCommand(cmd, true);
         } else {
-            boolean result = nodeInfo.performAction(AccessibilityNodeInfo.FOCUS_INPUT);
+            boolean result = nodeInfo.performAction(AccessibilityNodeInfo.FOCUS_ACCESSIBILITY);
             LogUtils.e("focus result: " + result);
             baseAccessService.inputText(nodeInfo, tail);
             nodeInfo.recycle();
