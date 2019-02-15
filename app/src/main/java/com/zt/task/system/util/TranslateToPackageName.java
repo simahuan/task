@@ -10,7 +10,8 @@ public class TranslateToPackageName {
         if ("百度".equalsIgnoreCase(appMarket)) {
             return "com.baidu.appsearch";
         } else if ("App Store".equalsIgnoreCase(appMarket)) {
-            throw new RuntimeException("App Store 未开发");
+            return "com.baidu.appsearch";
+//            throw new RuntimeException("App Store 未开发");
         } else {
             return "com.baidu.appsearch";
         }

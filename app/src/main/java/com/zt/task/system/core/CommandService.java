@@ -2,12 +2,8 @@ package com.zt.task.system.core;
 
 import android.app.ActivityManager;
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -19,10 +15,7 @@ import android.text.format.DateUtils;
 import android.text.style.ForegroundColorSpan;
 import android.widget.Toast;
 
-import com.zt.captcha.vpnlibrary.monitor.VpnService;
 import com.zt.captcha.vpnlibrary.monitor.VpnServiceMonitor;
-import com.zt.captcha.vpnlibrary.utils.Action;
-import com.zt.task.system.BuildConfig;
 import com.zt.task.system.entity.Command;
 import com.zt.task.system.entity.HeartBeatThree;
 import com.zt.task.system.entity.HeartBeatTwo;
@@ -76,27 +69,6 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
     //  服务重启，任务标记位清0
     private TickBroadcastReceiver mTickBroadcastReceiver;
 
-    private BroadcastReceiver vpnServerReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            binder.startConnectVpnServer(null);
-        }
-    };
-
-
-    VpnService.MyBinder binder = null;
-    ServiceConnection conn = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            binder = (VpnService.MyBinder) service;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            binder = null;
-        }
-    };
-
 
     @Override
     public void onVpnConnected() {
@@ -112,23 +84,11 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
 
 
     private void initVpnService() {
-        bindVpnService();
+        VpnServiceMonitor.getInstance().startMonitor(this);
         VpnServiceMonitor.getInstance().registerObserver(this);
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Action.AIDL_VPN_SERVER_CONNECTED);
-        registerReceiver(vpnServerReceiver, filter);
     }
 
-    private void bindVpnService() {
-        Intent lIntent = new Intent(this, VpnService.class);
-        this.bindService(lIntent, conn, Context.BIND_AUTO_CREATE);
-    }
 
-    private void unbindVpnService() {
-        binder.stopVpnServer();
-        unbindService(conn);
-    }
 
     @Override
     public void onCreate() {
@@ -154,7 +114,7 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
         super.onDestroy();
         LogUtils.e("ComanndeService   onDestrory......");
 //        stopWebSocketConnect();
-        unbindVpnService();
+        VpnServiceMonitor.getInstance().stopMonitor(this);
         unregisterEventBus();
         stopHeartBeat();
     }
@@ -180,14 +140,14 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
     }
 
     private void initWebSocketConnect() {
-        String webSocketAdd = String.format(BuildConfig.WS, DeviceInfoUtils.getIMEI(getBaseContext()));
-//        String webSocketAdd = formatWebSocket();
+//       String webSocketAdd = String.format(BuildConfig.WS, DeviceInfoUtils.getIMEI(getBaseContext()));
+        String webSocketAdd = formatWebSocket();
         connectedRouter(webSocketAdd);
     }
 
     private String formatWebSocket() {
         String deviceid = DeviceInfoUtils.getIMEI(getBaseContext());
-        return String.format("ws://192.168.1.191:2345/?uid=%1$s", deviceid);
+        return String.format("ws://192.168.1.195:2345/?uid=%1$s", deviceid);
     }
 
     private void stopWebSocketConnect() {
