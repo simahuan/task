@@ -88,8 +88,6 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
         VpnServiceMonitor.getInstance().registerObserver(this);
     }
 
-
-
     @Override
     public void onCreate() {
         super.onCreate();
