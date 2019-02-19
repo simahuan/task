@@ -2,6 +2,8 @@ package com.zt.task.system.service;
 
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.view.accessibility.AccessibilityEvent;
 
 import com.zt.task.system.entity.Task;
@@ -9,6 +11,7 @@ import com.zt.task.system.util.Constant;
 import com.zt.task.system.util.LogUtils;
 import com.zt.task.system.util.ParcelableUtil;
 import com.zt.task.system.util.Preferences;
+import com.zt.task.system.util.ShellUtils;
 import com.zt.task.system.util.ToastUtil;
 import com.zt.task.system.ztApplication;
 
@@ -62,18 +65,23 @@ public class MyAccessibilityService extends BaseAccessibilityService {
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
                 LogUtils.e("TYPE_WINDOW_STATE_CHANGED");
                 // 任务正在执行中，空闲 两种状态监听
-                dispatchAppStrategy(accessibilityEvent);
+                if (Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS) == 1) {
+                    dispatchAppStrategy(accessibilityEvent);
+                } else {
+                    LogUtils.e("task_status=" + Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS));
+                }
                 break;
             case AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED:
+                //notice message
                 LogUtils.e("TYPE_NOTIFICATION_STATE_CHANGED");
-                if (null != mExecuteStrategy ) {
+                if (null != mExecuteStrategy) {
                     app = ztApplication.getInstance();
                     if (null != app && null != app.getTask()) {
                         type = app.getTaskType();
                     } else {
                         type = Preferences.getString(mContext, Constant.KEY_TASK_TYPE);
                     }
-                    if("下载".equals(type)){
+                    if ("下载".equals(type)) {
                         mExecuteStrategy.executeType(ExecuteStrategy.TYPE_INSTALL);
                     }
                 }
@@ -96,7 +104,8 @@ public class MyAccessibilityService extends BaseAccessibilityService {
      */
     private void dispatchAppStrategy(AccessibilityEvent accessibilityEvent) {
         app = ztApplication.getInstance();
-        if (null != app && null != app.getTask()) {
+        Task task = app.getTask();
+        if (null != app && null != task) {
             type = app.getTaskType();
         } else {
             type = Preferences.getString(mContext, Constant.KEY_TASK_TYPE);
@@ -106,17 +115,21 @@ public class MyAccessibilityService extends BaseAccessibilityService {
             if (ExecuteType.TYPE_BRUSH_WORD.equalsIgnoreCase(type)) {
                 mExecuteStrategy.executeType(ExecuteStrategy.TYPE_BRUSH_WORD);
             } else if (ExecuteType.TYPE_DOWNLOAD.equalsIgnoreCase(type)) {
+                String pkgName = task.getProductPackage().trim().toLowerCase();
+                if (isPkgInstalled(pkgName)) {
+                    postedUninstallExecute(pkgName);
+                }
                 mExecuteStrategy.executeType(ExecuteStrategy.TYPE_APP_DOWNLOAD);
             } else if (ExecuteType.TYPE_COMMENT.equalsIgnoreCase(type)) {
                 mExecuteStrategy.executeType(ExecuteStrategy.TYPE_COMMENT);
             } else {
                 performHomeClick();
-                LogUtils.e("刷词以外其它类型任务开发中..");
-                ToastUtil.showShort(mContext, "刷词以外其它类型任务开发中..");
+                LogUtils.e("三大類以外其它类型任务开发中..");
+                ToastUtil.showShort(mContext, "三大類以外其它类型任务开发中..");
             }
         } else {
             LogUtils.e("任务不执行：isLaunchHome=" + isAppLaunchHome(accessibilityEvent) + ",type=" + type);
-            ToastUtil.showShort(mContext, "任务不执行");
+            ToastUtil.showShort(mContext, "app is not launch home");
         }
     }
 
@@ -130,6 +143,22 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         return "com.baidu.appsearch.MainActivity".equals(accessibilityEvent.getClassName());
     }
 
+    private boolean isPkgInstalled(String pkgName) {
+        PackageInfo packageInfo = null;
+        try {
+            packageInfo = getPackageManager().getPackageInfo(pkgName, 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            packageInfo = null;
+        } finally {
+            if (packageInfo == null) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+
+
     public void registerEventBus() {
         EventBus.getDefault().register(this);
     }
@@ -142,7 +171,7 @@ public class MyAccessibilityService extends BaseAccessibilityService {
     protected void onServiceConnected() {
         byte[] b = Preferences.getBytes(this, Constant.KEY_TASK_BEAN);
         Task task = ParcelableUtil.unmarshal(b, Task.CREATOR);
-        LogUtils.e("onServiceConnected,appMarket = " + task.getAppMarket());
+        LogUtils.e("onServiceConnected,appMarket = " + task.getAppMarket() + "\n" + Preferences.getString(this, Constant.KEY_TASK_MARKET));
 
         AccessibilityServiceInfo info = getServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
@@ -170,5 +199,13 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         return super.onUnbind(intent);
     }
 
-
+    /**
+     * 处理删除指定apk
+     *
+     * @param pkgName
+     */
+    public void postedUninstallExecute(String pkgName) {
+        String cmd = "pm  uninstall " + pkgName + ";";
+        ShellUtils.execCommand(cmd, true);
+    }
 }

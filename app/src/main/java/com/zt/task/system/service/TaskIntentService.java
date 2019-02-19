@@ -115,7 +115,7 @@ public class TaskIntentService extends IntentService {
         String packageName = TranslateToPackageName.translateToPackageName(appMarket);
         LauncherUtils.clearPackage(packageName);
         postedDelayExecute(2);
-        LauncherUtils.launchAPK3(this, packageName);
+        LauncherUtils.launchAPK1(this, packageName);
     }
 
     /**

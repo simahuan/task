@@ -71,7 +71,7 @@ dependencies {
     implementation 'org.greenrobot:eventbus:3.1.1'
     implementation 'com.google.code.gson:gson:2.8.2'
     implementation 'com.orhanobut:logger:2.2.0'
-    compile 'com.tencent.bugly:crashreport:latest.release'
+    implementation 'com.tencent.bugly:crashreport:latest.release'
 
     implementation project(':vpn2library')
     implementation project(':fakelibrary')

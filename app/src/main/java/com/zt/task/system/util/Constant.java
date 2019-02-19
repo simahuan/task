@@ -10,6 +10,7 @@ public class Constant {
     public static final String KEY_TASK_BEAN = "key_task_bean";
     public static final String KEY_COMMAND_BEAN = "key_command_bean";
 
+    public static final String KEY_TASK_MARKET = "key_task_app_market";
     public static final String KEY_TASK_TYPE = "key_task_type";
     public static final String KEY_TASK_STATUS = "key_task_status";
 

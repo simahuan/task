@@ -11,11 +11,11 @@ import android.support.annotation.Nullable;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.TextUtils;
-import android.text.format.DateUtils;
 import android.text.style.ForegroundColorSpan;
 import android.widget.Toast;
 
 import com.zt.captcha.vpnlibrary.monitor.VpnServiceMonitor;
+import com.zt.task.system.BuildConfig;
 import com.zt.task.system.entity.Command;
 import com.zt.task.system.entity.HeartBeatThree;
 import com.zt.task.system.entity.HeartBeatTwo;
@@ -48,8 +48,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import androidx.core.content.ContextCompat;
@@ -58,6 +58,9 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okio.ByteString;
 
+/**
+ * @author
+ */
 public class CommandService extends Service implements VpnServiceMonitor.VpnStateCallback {
     private final static String TAG = "CommandService";
     private WsManager wsManager;
@@ -73,8 +76,8 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
     @Override
     public void onVpnConnected() {
         LogUtils.e("CommandService vpn connected");
-        initWebSocketConnect();
-        initHeartBeat();
+//        initWebSocketConnect();
+//        initHeartBeat();
     }
 
     @Override
@@ -94,7 +97,9 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
         LogUtils.e("CommandService---onCreate---- 服务调用");
         registerEventBus();
         clearReportZero();
-        initVpnService();
+//        initVpnService();
+        initWebSocketConnect();
+        initHeartBeat();
 
         initTickBootReceiver();
 //        registerTickBootReceiver();
@@ -112,7 +117,7 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
         super.onDestroy();
         LogUtils.e("ComanndeService   onDestrory......");
 //        stopWebSocketConnect();
-        VpnServiceMonitor.getInstance().stopMonitor(this);
+//        VpnServiceMonitor.getInstance().stopMonitor(this);
         unregisterEventBus();
         stopHeartBeat();
     }
@@ -138,14 +143,8 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
     }
 
     private void initWebSocketConnect() {
-//       String webSocketAdd = String.format(BuildConfig.WS, DeviceInfoUtils.getIMEI(getBaseContext()));
-        String webSocketAdd = formatWebSocket();
+        String webSocketAdd = String.format(BuildConfig.WS, DeviceInfoUtils.getIMEI(getBaseContext()));
         connectedRouter(webSocketAdd);
-    }
-
-    private String formatWebSocket() {
-        String deviceid = DeviceInfoUtils.getIMEI(getBaseContext());
-        return String.format("ws://192.168.1.195:2345/?uid=%1$s", deviceid);
     }
 
     private void stopWebSocketConnect() {
@@ -232,7 +231,6 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
         @Override
         public void onReconnect() {
             super.onReconnect();
-            LogUtils.e("wsStatusListener----onReconnect--------------url------" + formatWebSocket());
         }
 
         @Override
@@ -344,24 +342,22 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
         return heartbeat_one;
     }
 
-    // 心跳机制
-    Timer mTimer = new Timer(true);
-    TimerTask mTimerTask = new TimerTask() {
-        @Override
-        public void run() {
-            mHandler.sendEmptyMessage(200);
-        }
-    };
+    ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
     private void initHeartBeat() {
-        mTimer.schedule(mTimerTask, 1000, 10 * 1000);
+        service.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                mHandler.sendEmptyMessage(200);
+            }
+        }, 1, 10, TimeUnit.SECONDS);
     }
 
 
     private void stopHeartBeat() {
-        if (mTimer != null) {
-            mTimer.cancel();
-            mTimer = null;
+        if (service != null) {
+            service.shutdown();
+            service = null;
         }
     }
 
@@ -371,10 +367,10 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
             if (wsManager != null && wsManager.isWsConnected()) {
                 boolean isSend = wsManager.sendMessage(content);
                 if (isSend) {
-                    LogUtils.i(Spanny.spanText(
-                            "我和服务器连接成功: " + DateUtils.formatDateTime(getBaseContext(), System.currentTimeMillis(),
-                                    DateUtils.FORMAT_SHOW_TIME) + "\n", new ForegroundColorSpan(
-                                    ContextCompat.getColor(getBaseContext(), android.R.color.holo_green_light))).toString());
+//                    LogUtils.i(Spanny.spanText(
+//                            "我和服务器连接成功: " + DateUtils.formatDateTime(getBaseContext(), System.currentTimeMillis(),
+//                                    DateUtils.FORMAT_SHOW_TIME) + "\n", new ForegroundColorSpan(
+//                                    ContextCompat.getColor(getBaseContext(), android.R.color.holo_green_light))).toString());
                     LogUtils.i(content + "\n\n");
                 } else {
                     LogUtils.e(Spanny.spanText("消息发送失败\n", new ForegroundColorSpan(
@@ -413,6 +409,8 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
                 Task task = lTasks.get(0);
                 Preferences.set(getBaseContext(), Constant.KEY_TASK_BEAN, task);
                 Preferences.set(getBaseContext(), Constant.KEY_TASK_TYPE, task.getType());
+                Preferences.set(getBaseContext(),Constant.KEY_TASK_MARKET,task.getAppMarket());
+
                 ztApplication.getInstance().setTask(task);
                 Preferences.set(getBaseContext(), Constant.KEY_TASK_INIT_NOT_START, false);
                 executeTask(task);
@@ -453,4 +451,5 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
         String cmd = "sleep  " + second + ";";
         ShellUtils.execCommand(cmd, true);
     }
+
 }

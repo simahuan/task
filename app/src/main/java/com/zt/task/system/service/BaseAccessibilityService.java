@@ -247,7 +247,6 @@ public class BaseAccessibilityService extends AccessibilityService {
     }
 
     public AccessibilityNodeInfo findViewByID2(String id) {
-
         List<AccessibilityWindowInfo> nodeInfoList = getWindows();
         for (AccessibilityWindowInfo node : nodeInfoList) {
             AccessibilityNodeInfo info = node.getRoot();

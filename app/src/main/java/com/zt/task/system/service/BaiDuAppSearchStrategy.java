@@ -105,11 +105,12 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
                 brushWord();
                 break;
             case TYPE_APP_DOWNLOAD:
-                LogUtils.e("执行下载");
+                LogUtils.e("执行下载前检查 app 是否安装");
                 download();
                 break;
             case TYPE_COMMENT:
                 LogUtils.e("执行评论");
+                comment();
                 break;
             case TYPE_INSTALL:
                 LogUtils.e("启动应用安装监听.....");
@@ -120,6 +121,51 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
                 break;
         }
     }
+
+    /**
+     * 评论,下载后评论
+     */
+    private void comment() {
+        // 先注册
+        AccessibilityNodeInfo nodeInfo = baseAccessService.findViewByText("分类", true);
+        if (nodeInfo != null) {
+            baseAccessService.performViewClick(nodeInfo);
+        }
+
+        String cmd = "sleep 2;input tap 433 740;sleep 2";
+        ShellUtils.execCommand(cmd, true);
+
+        baseAccessService.postedDelayExecute(5);
+
+        //寻找登陆
+        AccessibilityNodeInfo avatarNode = baseAccessService.findViewByID("com.baidu.appsearch:id/entry_view");
+        if (null != avatarNode) {
+            baseAccessService.performViewClick(avatarNode);
+            baseAccessService.postedDelayExecute(10);
+        } else {
+            LogUtils.e("avatarNode is null");
+        }
+
+        AccessibilityNodeInfo loginNode = baseAccessService.findViewByID("com.baidu.appsearch:id/please_login");
+        if (null != loginNode) {
+            baseAccessService.performViewClick(loginNode);
+            baseAccessService.postedDelayExecute(5);
+        } else {
+            LogUtils.e("loginNode is null");
+            return;
+        }
+
+        ShellUtils.execCommand(" input touchscreen swipe 149 378 149 378 2000;sleep 1;input tap 48 378; input text 15281007064", true);
+        ShellUtils.execCommand("sleep 2;input keyevent 61;sleep 1;input text  simahuan1986", true);
+        ShellUtils.execCommand(" input keyevent 61 ; sleep 1", true);
+
+        ShellUtils.execCommand(" input tap 237 581 ; sleep 2", true);
+        baseAccessService.postedDelayExecute(15);
+        // 执行下载
+
+        // 执行评论
+    }
+
 
     private boolean installHome = false;
 
@@ -190,6 +236,7 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
         baseAccessService.postedDelayExecute(5);
         installHome = false;
         baseAccessService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
+        TaskIntentService.startActionReportTask(mContext, Preferences.getString(mContext, Constant.KEY_TASK_MARKET));
     }
 
     /**
@@ -202,6 +249,7 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
             brushWordHandler.sendEmptyMessage(ExecuteStep.STEP_ONE_FIND_SEARCH_BOX);
         }
     }
+
 
     /**
      * app 下载入口
@@ -254,10 +302,15 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
         if (null == rootNode) {
             return;
         }
+
         List<AccessibilityNodeInfo> loadingNodes = rootNode.findAccessibilityNodeInfosByViewId("com.baidu.appsearch:id/loading_imageView");
         if (null != loadingNodes && !loadingNodes.isEmpty()) {
             LogUtils.e("搜索 结果 转圈 继续等待 20s ");
             baseAccessService.postedDelayExecute(20);
+        }
+
+        if (findPleaseWait(rootNode)) {
+            LogUtils.e("正处理加载页面，要求取消此次任务下载");
         }
 
         LogUtils.e("收到第四步任务,执行下载产品名称 ");
@@ -275,6 +328,18 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
         }
     }
 
+    private boolean findPleaseWait(AccessibilityNodeInfo pRootNode) {
+        List<AccessibilityNodeInfo> appItemNodes = pRootNode.findAccessibilityNodeInfosByViewId("com.baidu.appsearch:id/webview_loading_text");
+
+        for (AccessibilityNodeInfo itemNodes : appItemNodes) {
+            List<AccessibilityNodeInfo> appnames = itemNodes.findAccessibilityNodeInfosByText("正在全力为您加载");
+            if (null != appnames && !appnames.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void findAndClickDownloadProduce(AccessibilityNodeInfo pRootNode) {
         List<AccessibilityNodeInfo> appItemNodes = pRootNode.findAccessibilityNodeInfosByViewId("com.baidu.appsearch:id/app_item");
         for (AccessibilityNodeInfo itemNodes : appItemNodes) {
@@ -290,10 +355,13 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
                         for (AccessibilityNodeInfo node : okNodes) {
                             List<AccessibilityNodeInfo> n = node.findAccessibilityNodeInfosByText("下载");
                             List<AccessibilityNodeInfo> m = node.findAccessibilityNodeInfosByViewId("com.baidu.appsearch:id/text");
-                            AccessibilityNodeInfo doneNode = n.get(0);
-                            if (null != doneNode) {
-                                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                                break;
+//                           数组下标越界
+                            if (null != n && !n.isEmpty()) {
+                                AccessibilityNodeInfo doneNode = n.get(0);
+                                if (null != doneNode) {
+                                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                    break;
+                                }
                             }
                         }
                     } else {
