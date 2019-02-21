@@ -8,6 +8,9 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
+/**
+ * @author
+ */
 public class Task implements Parcelable {
 
     public static ArrayList<Task> parse(JSONArray array) {
@@ -26,7 +29,8 @@ public class Task implements Parcelable {
                     .keyWords(j.optString("keyWords"))
                     .appMarket(j.optString("appMarket"))
                     .productName(j.optString("productName"))
-                    .productPackage(j.optString("productPackage"));
+                    .productPackage(j.optString("productPackage"))
+                    .comments(j.optString("comments"));
             items.add(b.build());
         }
         return items;
@@ -48,6 +52,7 @@ public class Task implements Parcelable {
         builder.appMarket = copy.appMarket;
         builder.productName = copy.productName;
         builder.productPackage = copy.productPackage;
+        builder.comments = copy.comments;
         return builder;
     }
 
@@ -61,6 +66,7 @@ public class Task implements Parcelable {
         setAppMarket(builder.appMarket);
         setProductName(builder.productName);
         setProductPackage(builder.productPackage);
+        setComments(builder.comments);
     }
 
     private int id;
@@ -72,6 +78,15 @@ public class Task implements Parcelable {
     private String appMarket;
     private String productName;
     private String productPackage;
+    private String comments;
+
+    public String getComments() {
+        return comments;
+    }
+
+    public void setComments(String pComments) {
+        comments = pComments;
+    }
 
     public int getId() {
         return id;
@@ -162,6 +177,7 @@ public class Task implements Parcelable {
         dest.writeString(this.appMarket);
         dest.writeString(this.productName);
         dest.writeString(this.productPackage);
+        dest.writeString(this.comments);
     }
 
     public Task() {
@@ -177,6 +193,7 @@ public class Task implements Parcelable {
         this.appMarket = in.readString();
         this.productName = in.readString();
         this.productPackage = in.readString();
+        this.comments = in.readString();
     }
 
     public static final Creator<Task> CREATOR = new Creator<Task>() {
@@ -201,6 +218,7 @@ public class Task implements Parcelable {
         public String appMarket;
         public String productName;
         public String productPackage;
+        public String comments;
 
         private Builder() {
         }
@@ -247,6 +265,11 @@ public class Task implements Parcelable {
 
         public Builder productPackage(String val) {
             productPackage = val;
+            return this;
+        }
+
+        public Builder comments(String val) {
+            comments = val;
             return this;
         }
 

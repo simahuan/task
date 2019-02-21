@@ -18,6 +18,7 @@ import android.view.accessibility.AccessibilityWindowInfo;
 
 import com.zt.task.system.entity.Task;
 import com.zt.task.system.util.Constant;
+import com.zt.task.system.util.LogUtils;
 import com.zt.task.system.util.ParcelableUtil;
 import com.zt.task.system.util.Preferences;
 import com.zt.task.system.util.ShellUtils;
@@ -52,7 +53,7 @@ public class BaseAccessibilityService extends AccessibilityService {
     }
 
 
-    protected  String getKeyWords() {
+    protected String getKeyWords() {
         String regex = ",|，|\\s+";
         String words = getTask().getKeyWords();
         String key = words;
@@ -126,6 +127,39 @@ public class BaseAccessibilityService extends AccessibilityService {
                 break;
             }
             nodeInfo = nodeInfo.getParent();
+        }
+    }
+
+    public void findWebViewNode(AccessibilityNodeInfo nodeInfo) {
+        AccessibilityNodeInfo accessibilityNodeInfoWebView = null;
+        if (nodeInfo == null) {
+            return;
+        }
+
+        for (int i = 0; i < nodeInfo.getChildCount(); i++) {
+            AccessibilityNodeInfo child = nodeInfo.getChild(i);
+            if ("android.webkit.WebView".equals(child.getClassName())) {
+                accessibilityNodeInfoWebView = child;
+                LogUtils.d("findWebViewNode--", "找到webView");
+                return;
+            }
+
+            if (child.getChildCount() > 0) {
+                findWebViewNode(child);
+            }
+        }
+    }
+
+    public void getRecordNode() {
+        AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
+        if (nodeInfo == null) {
+            return;
+        }
+        int count = nodeInfo.getChildCount();
+        LogUtils.e("getRecordNode--", "孩子数：$count");
+        for (int i = 0; i < count; i++) {
+            AccessibilityNodeInfo child = nodeInfo.getChild(i);
+            child.getContentDescription();
         }
     }
 

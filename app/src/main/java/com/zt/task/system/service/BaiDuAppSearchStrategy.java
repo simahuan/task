@@ -1,6 +1,5 @@
 package com.zt.task.system.service;
 
-import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
@@ -126,44 +125,64 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
      * 评论,下载后评论
      */
     private void comment() {
-        // 先注册
-        AccessibilityNodeInfo nodeInfo = baseAccessService.findViewByText("分类", true);
-        if (nodeInfo != null) {
-            baseAccessService.performViewClick(nodeInfo);
-        }
+        //先下载
+        download();
 
-        String cmd = "sleep 2;input tap 433 740;sleep 2";
-        ShellUtils.execCommand(cmd, true);
+//        // 先注册
+//        AccessibilityNodeInfo nodeInfo = baseAccessService.findViewByText("分类", true);
+//        if (nodeInfo != null) {
+//            baseAccessService.performViewClick(nodeInfo);
+//        }
+//
+//        String cmd = "sleep 2;input tap 433 740;sleep 2";
+//        ShellUtils.execCommand(cmd, true);
+//
+//        baseAccessService.postedDelayExecute(10);
+//
+//        //寻找登陆
+//        AccessibilityNodeInfo avatarNode = baseAccessService.findViewByID("com.baidu.appsearch:id/entry_view");
+//        if (null != avatarNode) {
+//            baseAccessService.performViewClick(avatarNode);
+//            baseAccessService.postedDelayExecute(10);
+//        } else {
+//            LogUtils.e("avatarNode is null");
+//            return;
+//        }
+//
+//
+//        AccessibilityNodeInfo loginNode = baseAccessService.findViewByID("com.baidu.appsearch:id/please_login");
+//        if (null != loginNode) {
+//            baseAccessService.performViewClick(loginNode);
+//            baseAccessService.postedDelayExecute(5);
+//        } else {
+//            LogUtils.e("loginNode is null");
+//            return;
+//        }
 
-        baseAccessService.postedDelayExecute(5);
+//        baseAccessService.getRecordNode();
 
-        //寻找登陆
-        AccessibilityNodeInfo avatarNode = baseAccessService.findViewByID("com.baidu.appsearch:id/entry_view");
-        if (null != avatarNode) {
-            baseAccessService.performViewClick(avatarNode);
-            baseAccessService.postedDelayExecute(10);
-        } else {
-            LogUtils.e("avatarNode is null");
-        }
-
-        AccessibilityNodeInfo loginNode = baseAccessService.findViewByID("com.baidu.appsearch:id/please_login");
-        if (null != loginNode) {
-            baseAccessService.performViewClick(loginNode);
-            baseAccessService.postedDelayExecute(5);
-        } else {
-            LogUtils.e("loginNode is null");
-            return;
+        AccessibilityNodeInfo sapiNode = baseAccessService.findViewByID("com.baidu.appsearch:id/sapi_webview");
+        if (null != sapiNode) {
+            ShellUtils.execCommand(" input tap 100 457; sleep 2", true);
+            LogUtils.e("sapiNode 手机号短信验证登录引导帐号体系登录");
         }
 
         ShellUtils.execCommand(" input touchscreen swipe 149 378 149 378 2000;sleep 1;input tap 48 378; input text 15281007064", true);
         ShellUtils.execCommand("sleep 2;input keyevent 61;sleep 1;input text  simahuan1986", true);
         ShellUtils.execCommand(" input keyevent 61 ; sleep 1", true);
 
+        baseAccessService.postedDelayExecute(10);
         ShellUtils.execCommand(" input tap 237 581 ; sleep 2", true);
-        baseAccessService.postedDelayExecute(15);
-        // 执行下载
 
+        Preferences.set(mContext, Constant.KEY_COMMENT_REGISTER, true);
+        baseAccessService.postedDelayExecute(15);
+        baseAccessService.performBackClick();
+        // 执行下载
+        ShellUtils.execCommand(" input tap 47 743 ; sleep 2", true);
+
+//        download();
         // 执行评论
+
     }
 
 
@@ -172,6 +191,7 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
     private void installApk() {
         AccessibilityNodeInfo rootNode = baseAccessService.getRootInActiveWindow();
         if (null == rootNode) {
+            LogUtils.e("installApk  rootNode is null;");
             return;
         }
         List<AccessibilityNodeInfo> nodeInfos = rootNode.findAccessibilityNodeInfosByText("金道贵金属");
@@ -235,8 +255,11 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
         LogUtils.e("完成安装流程，返回桌面,上报数据");
         baseAccessService.postedDelayExecute(5);
         installHome = false;
-        baseAccessService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
-        TaskIntentService.startActionReportTask(mContext, Preferences.getString(mContext, Constant.KEY_TASK_MARKET));
+
+        // TODO  配合评论
+
+//        baseAccessService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
+//        TaskIntentService.startActionReportTask(mContext, Preferences.getString(mContext, Constant.KEY_TASK_MARKET));
     }
 
     /**
@@ -320,11 +343,15 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
             // 建议滚屏 --向上滚动 --- 递归调用
             LogUtils.e("建议滚屏 --向上滚动 --- 递归调用");
             List<AccessibilityNodeInfo> nInfos = rootNode.findAccessibilityNodeInfosByViewId("com.baidu.appsearch:id/recyclerview");
+            if (nInfos.isEmpty()) {
+                return;
+            }
             AccessibilityNodeInfo mNode = nInfos.get(0);
             if (null != mNode) {
                 mNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
             }
             findAndClickDownloadProduce(rootNode);
+            // apk 下载完毕后 引导进入安装 流程
         }
     }
 
@@ -350,6 +377,7 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
                     if (TextUtils.equals(appnameNode.getClassName(), "android.widget.TextView")
                             && TextUtils.equals("金道贵金属", appnameNode.getText())) {
                         isFirstScreenProduceName = true;
+                        AccessibilityNodeInfo parentNode = itemNodes;
 
                         List<AccessibilityNodeInfo> okNodes = itemNodes.findAccessibilityNodeInfosByViewId("com.baidu.appsearch:id/app_action");
                         for (AccessibilityNodeInfo node : okNodes) {
@@ -363,12 +391,79 @@ public class BaiDuAppSearchStrategy implements ExecuteStrategy {
                                     break;
                                 }
                             }
+                            List<AccessibilityNodeInfo> openNode = node.findAccessibilityNodeInfosByText("打开");
+                            if (null != openNode && !openNode.isEmpty() && null != parentNode) {
+                                if (null != parentNode && parentNode.isClickable()) {
+                                    parentNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                    baseAccessService.postedDelayExecute(10);
+                                    // 进入评论区
+                                    LogUtils.e("进入评论区");
+                                    AccessibilityNodeInfo commentNode = baseAccessService.findViewByText("评论", true);
+                                    if (null != commentNode && commentNode.isClickable()) {
+                                        commentNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+
+                                        baseAccessService.postedDelayExecute(15);
+                                        ShellUtils.execCommand(" input  swipe 240 581 240 770 5000;", true);
+
+                                        AccessibilityNodeInfo scrollNode = baseAccessService.findViewByID("com.baidu.appsearch:id/recyclerview");
+                                        if (null != scrollNode) {
+                                            baseAccessService.performScrollForward();
+                                        } else {
+                                            return;
+                                        }
+
+                                        // 开始评论
+                                        AccessibilityNodeInfo loginCommentNode = baseAccessService.findViewByID("com.baidu.appsearch:id/login_comment");
+                                        if (loginCommentNode != null) {
+                                            LogUtils.e("进入点击评论");
+                                            baseAccessService.postedDelayExecute(3);
+                                            loginCommentNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                            baseAccessService.postedDelayExecute(10);
+
+                                            // 往下进入帐号登录
+                                            AccessibilityNodeInfo sapiNode = baseAccessService.findViewByID("com.baidu.appsearch:id/sapi_webview");
+                                            if (null != sapiNode) {
+                                                ShellUtils.execCommand(" input tap 100 457; sleep 2", true);
+                                                LogUtils.e("sapiNode 手机号短信验证登录引导帐号体系登录");
+                                            }
+
+                                            ShellUtils.execCommand(" input touchscreen swipe 149 378 149 378 2000;sleep 1;input tap 48 378; input text 15281007064", true);
+                                            ShellUtils.execCommand("sleep 2;input keyevent 61;sleep 1;input text  simahuan1986", true);
+                                            ShellUtils.execCommand(" input keyevent 61 ; sleep 1", true);
+
+                                            baseAccessService.postedDelayExecute(10);
+                                            ShellUtils.execCommand(" input tap 237 581 ; sleep 2", true);
+                                            // 进入 评论
+                                            baseAccessService.postedDelayExecute(10);
+                                            commentNode = baseAccessService.findViewByText("评论", true);
+                                            if (null != parentNode && parentNode.isClickable()) {
+
+                                                commentNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                                //--
+                                                baseAccessService.postedDelayExecute(10);
+
+                                                ShellUtils.execCommand(" input  swipe 240 48 240 748 5000;", true);
+
+                                                AccessibilityNodeInfo clickComment = baseAccessService.findViewByID("com.baidu.appsearch:id/comment_text");
+                                                if (null != clickComment){
+                                                    clickComment.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                                    // 点击评论
+
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
+
+
                     } else {
                         isFirstScreenProduceName = false;
                     }
                 }
             }
+
         }
     }
 

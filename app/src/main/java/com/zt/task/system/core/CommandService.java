@@ -15,7 +15,6 @@ import android.text.style.ForegroundColorSpan;
 import android.widget.Toast;
 
 import com.zt.captcha.vpnlibrary.monitor.VpnServiceMonitor;
-import com.zt.task.system.BuildConfig;
 import com.zt.task.system.entity.Command;
 import com.zt.task.system.entity.HeartBeatThree;
 import com.zt.task.system.entity.HeartBeatTwo;
@@ -74,20 +73,23 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
 
 
     @Override
-    public void onVpnConnected() {
-        LogUtils.e("CommandService vpn connected");
-//        initWebSocketConnect();
-//        initHeartBeat();
+    public void onSystemReady() {
+
     }
 
     @Override
-    public void onVpnDisconnected() {
-        LogUtils.e("CommandService vpn disconnected");
+    public void onStartDone() {
+
     }
 
+    @Override
+    public void onStopDone() {
+
+    }
 
     private void initVpnService() {
-        VpnServiceMonitor.getInstance().startMonitor(this);
+        VpnServiceMonitor.getInstance().initMonitor(this);
+//        VpnServiceMonitor.getInstance().startMonitor(null);
         VpnServiceMonitor.getInstance().registerObserver(this);
     }
 
@@ -108,7 +110,6 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         LogUtils.e("CommandService --onStartCommand---服务启动");
-
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -143,7 +144,9 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
     }
 
     private void initWebSocketConnect() {
-        String webSocketAdd = String.format(BuildConfig.WS, DeviceInfoUtils.getIMEI(getBaseContext()));
+        String ws = "ws://192.168.1.195:2345/?uid=%1$s";
+        String webSocketAdd = String.format(ws, DeviceInfoUtils.getIMEI(getBaseContext()));
+//        String webSocketAdd = String.format(BuildConfig.WS, DeviceInfoUtils.getIMEI(getBaseContext()));
         connectedRouter(webSocketAdd);
     }
 
@@ -162,7 +165,7 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
         EventBus.getDefault().unregister(this);
     }
 
-    private void getTaskInfos(String url, String token) {
+    private void getTaskInfo(String url, String token) {
         OkHTTPManger.getInstance().getAsynBackStringWithoutParms(url, token, new MyDataCallBack() {
             @Override
             public void requestSuccess(Object result) {
@@ -206,7 +209,7 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
                         //任务刚接到
                         Preferences.set(getBaseContext(), Constant.KEY_TASK_STATUS, Constant.TASK_EXECUTE);
 
-                        getTaskInfos(cmd.getUrl(), cmd.getTokens());
+                        getTaskInfo(cmd.getUrl(), cmd.getTokens());
                         Preferences.set(getBaseContext(), Constant.KEY_TASK_CREATE_TIME, System.currentTimeMillis());
                     } else if (!TextUtils.isEmpty(cmd.getTokens())
                             && !TextUtils.isEmpty(cmd.getUrl())
@@ -267,6 +270,8 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
         Preferences.set(CommandService.this, Constant.KEY_TASK_STATUS, Constant.TASK_IDLE);
         Preferences.set(this, Constant.KEY_TASK_ERROR, false);
         Preferences.set(this, Constant.KEY_TASK_TYPE, "clean");
+
+        Preferences.set(this, Constant.KEY_COMMENT_REGISTER, false);
         ztApplication app = ztApplication.getInstance();
         if (null != app) {
             app.setTask(null);
@@ -367,10 +372,6 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
             if (wsManager != null && wsManager.isWsConnected()) {
                 boolean isSend = wsManager.sendMessage(content);
                 if (isSend) {
-//                    LogUtils.i(Spanny.spanText(
-//                            "我和服务器连接成功: " + DateUtils.formatDateTime(getBaseContext(), System.currentTimeMillis(),
-//                                    DateUtils.FORMAT_SHOW_TIME) + "\n", new ForegroundColorSpan(
-//                                    ContextCompat.getColor(getBaseContext(), android.R.color.holo_green_light))).toString());
                     LogUtils.i(content + "\n\n");
                 } else {
                     LogUtils.e(Spanny.spanText("消息发送失败\n", new ForegroundColorSpan(
@@ -409,7 +410,7 @@ public class CommandService extends Service implements VpnServiceMonitor.VpnStat
                 Task task = lTasks.get(0);
                 Preferences.set(getBaseContext(), Constant.KEY_TASK_BEAN, task);
                 Preferences.set(getBaseContext(), Constant.KEY_TASK_TYPE, task.getType());
-                Preferences.set(getBaseContext(),Constant.KEY_TASK_MARKET,task.getAppMarket());
+                Preferences.set(getBaseContext(), Constant.KEY_TASK_MARKET, task.getAppMarket());
 
                 ztApplication.getInstance().setTask(task);
                 Preferences.set(getBaseContext(), Constant.KEY_TASK_INIT_NOT_START, false);

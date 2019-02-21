@@ -66,7 +66,12 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                 LogUtils.e("TYPE_WINDOW_STATE_CHANGED");
                 // 任务正在执行中，空闲 两种状态监听
                 if (Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS) == 1) {
-                    dispatchAppStrategy(accessibilityEvent);
+                    if (Preferences.getBoolean(getBaseContext(), Constant.KEY_COMMENT_REGISTER)) {
+                        // 帐户已经完成注册
+                        LogUtils.e("帐户已经完成注册");
+                    } else {
+                        dispatchAppStrategy(accessibilityEvent);
+                    }
                 } else {
                     LogUtils.e("task_status=" + Preferences.getInt(getBaseContext(), Constant.KEY_TASK_STATUS));
                 }
@@ -81,10 +86,11 @@ public class MyAccessibilityService extends BaseAccessibilityService {
                     } else {
                         type = Preferences.getString(mContext, Constant.KEY_TASK_TYPE);
                     }
-                    if ("下载".equals(type)) {
+                    if ("下载".equals(type) || "评论".equals(type)) {
                         mExecuteStrategy.executeType(ExecuteStrategy.TYPE_INSTALL);
                     }
                 }
+                break;
             case AccessibilityEvent.TYPE_WINDOWS_CHANGED:
                 LogUtils.e("TYPE_WINDOWS_CHANGED");
                 break;
@@ -177,7 +183,8 @@ public class MyAccessibilityService extends BaseAccessibilityService {
         info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
         info.flags = AccessibilityServiceInfo.DEFAULT
                 | AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-                | AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
+                | AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
+                | AccessibilityServiceInfo.FLAG_REQUEST_ENHANCED_WEB_ACCESSIBILITY;
         info.notificationTimeout = 1000;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
         setServiceInfo(info);

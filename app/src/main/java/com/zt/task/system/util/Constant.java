@@ -13,6 +13,7 @@ public class Constant {
     public static final String KEY_TASK_MARKET = "key_task_app_market";
     public static final String KEY_TASK_TYPE = "key_task_type";
     public static final String KEY_TASK_STATUS = "key_task_status";
+    public static final String KEY_COMMENT_REGISTER = "key_comment_register";
 
     public static final String KEY_TASK_INIT_NOT_START = "key_task_init_not_start";
     public static final String KEY_TASK_CREATE_TIME = "key_task_create_time";

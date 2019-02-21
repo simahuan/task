@@ -143,6 +143,7 @@ public class WsManager implements IWsManager {
         @Override
         public void onFailure(WebSocket webSocket, final Throwable t, final Response response) {
             try {
+                LogUtils.e("[onFailure]");
                 tryReconnect();
                 if (wsStatusListener != null) {
                     LogUtils.e("[走的链接失败这里！！！！！！！！！！！！！！！！]");
@@ -243,7 +244,7 @@ public class WsManager implements IWsManager {
         if (!isNetworkConnected(mContext)) {
             setCurrentStatus(WsStatus.DISCONNECTED);
             LogUtils.e("[请您检查网络，未连接]");
-//            return;
+            return;
         }
 
         setCurrentStatus(WsStatus.RECONNECT);
@@ -321,6 +322,7 @@ public class WsManager implements IWsManager {
             }
             //发送消息失败，尝试重连
             if (!isSend) {
+                LogUtils.e("[isSend]");
                 tryReconnect();
             }
         }
